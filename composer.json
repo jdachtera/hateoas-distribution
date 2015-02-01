@@ -10,8 +10,8 @@
     "require": {
         "php": ">=5.3.3",
         "symfony/symfony": "2.6.*",
-        "doctrine/common": "2.5.x-dev#b44549dcc98a18f0728df05df523bdf179edb90b",
-        "doctrine/orm": "2.5.x-dev#0e7646cf4b29e1e2a566549ee48f4995c15020d6",
+        "doctrine/common": "2.5.x-dev",
+        "doctrine/orm": "2.5.x-dev",
         "doctrine/doctrine-bundle": "~1.2",
         "twig/extensions": "~1.0",
         "symfony/assetic-bundle": "~2.3",

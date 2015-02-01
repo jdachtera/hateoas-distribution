@@ -4,7 +4,7 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "ae5e1e97ff35374e05b021a5c8b870e7",
+    "hash": "c6901f326023e21efe74677c6bb479cb",
     "packages": [
         {
             "name": "doctrine/annotations",
@@ -218,12 +218,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/common.git",
-                "reference": "b44549dcc98a18f0728df05df523bdf179edb90b"
+                "reference": "56360cc13bfd13893731c6c4d1d82005a61d7694"
             },
             "dist": {
                 "type": "zip",
                 "url": "https://api.github.com/repos/doctrine/common/zipball/56360cc13bfd13893731c6c4d1d82005a61d7694",
-                "reference": "b44549dcc98a18f0728df05df523bdf179edb90b",
+                "reference": "56360cc13bfd13893731c6c4d1d82005a61d7694",
                 "shasum": ""
             },
             "require": {
@@ -283,7 +283,7 @@
                 "persistence",
                 "spl"
             ],
-            "time": "2015-01-13 17:44:22"
+            "time": "2015-01-23 18:43:22"
         },
         {
             "name": "doctrine/dbal",
@@ -700,12 +700,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/doctrine2.git",
-                "reference": "0e7646cf4b29e1e2a566549ee48f4995c15020d6"
+                "reference": "64ef89ce4cfe2b41c3f7225471cf450fa8e28bbf"
             },
             "dist": {
                 "type": "zip",
                 "url": "https://api.github.com/repos/doctrine/doctrine2/zipball/64ef89ce4cfe2b41c3f7225471cf450fa8e28bbf",
-                "reference": "0e7646cf4b29e1e2a566549ee48f4995c15020d6",
+                "reference": "64ef89ce4cfe2b41c3f7225471cf450fa8e28bbf",
                 "shasum": ""
             },
             "require": {
@@ -769,7 +769,7 @@
                 "database",
                 "orm"
             ],
-            "time": "2015-01-15 23:10:56"
+            "time": "2015-01-29 03:11:49"
         },
         {
             "name": "friendsofsymfony/rest-bundle",
@@ -1758,17 +1758,17 @@
         },
         {
             "name": "sensio/distribution-bundle",
-            "version": "v3.0.15",
+            "version": "v3.0.16",
             "target-dir": "Sensio/Bundle/DistributionBundle",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sensiolabs/SensioDistributionBundle.git",
-                "reference": "0692cd6a8fcf645abce8ea45f7cbbd1942e2b23c"
+                "reference": "aa30f8cd3ee68144e043ca30713aa7d7df35c5fa"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sensiolabs/SensioDistributionBundle/zipball/0692cd6a8fcf645abce8ea45f7cbbd1942e2b23c",
-                "reference": "0692cd6a8fcf645abce8ea45f7cbbd1942e2b23c",
+                "url": "https://api.github.com/repos/sensiolabs/SensioDistributionBundle/zipball/aa30f8cd3ee68144e043ca30713aa7d7df35c5fa",
+                "reference": "aa30f8cd3ee68144e043ca30713aa7d7df35c5fa",
                 "shasum": ""
             },
             "require": {
@@ -1807,7 +1807,7 @@
                 "configuration",
                 "distribution"
             ],
-            "time": "2015-01-07 07:13:43"
+            "time": "2015-02-01 05:42:21"
         },
         {
             "name": "sensio/framework-extra-bundle",
@@ -2372,21 +2372,22 @@
             "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "ssh://git@jdac.de:10022/jdachtera/hateoas-bundle.git",
-                "reference": "9d82e0da0caff5ed0d9b9c519efaffd7830cb146"
+                "url": "ssh://git@jdac.de:10022/uebb/hateoas-bundle.git",
+                "reference": "76c4ebcaed44ac39cd466d1105d6e7263a2a2e5f"
             },
             "require": {
-                "doctrine/common": "2.5.x-dev#b44549dcc98a18f0728df05df523bdf179edb90b",
+                "doctrine/common": "2.5.x-dev",
                 "doctrine/dbal": "2.5.*",
                 "doctrine/doctrine-bundle": "1.3.*",
                 "doctrine/doctrine-cache-bundle": "~1.0",
-                "doctrine/orm": "2.5.x-dev#0e7646cf4b29e1e2a566549ee48f4995c15020d6",
+                "doctrine/orm": "2.5.x-dev",
                 "friendsofsymfony/rest-bundle": "~1.5",
                 "hautelook/templated-uri-bundle": "~1.0",
                 "jms/serializer-bundle": "0.13.*",
                 "knplabs/doctrine-behaviors": "~1.0",
                 "nelmio/cors-bundle": "1.3.0",
                 "pagerfanta/pagerfanta": "~1.0",
+                "symfony/event-dispatcher": "~2.6",
                 "symfony/form": "~2.6",
                 "symfony/validator": "~2.6",
                 "symfony/yaml": "~2.6",
@@ -2396,7 +2397,7 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "uebb\\HateoasBundle\\": ""
+                    "uebb\\HateoasBundle\\": "src"
                 }
             },
             "authors": [
@@ -2405,7 +2406,7 @@
                     "email": "jascha.dachtera@gmail.com"
                 }
             ],
-            "time": "2015-01-30 16:01:42"
+            "time": "2015-02-01 13:09:11"
         },
         {
             "name": "willdurand/hateoas",

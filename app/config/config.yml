@@ -2,6 +2,7 @@ imports:
     - { resource: parameters.yml }
     - { resource: security.yml }
     - { resource: services.yml }
+    - { resource: ../../vendor/knplabs/doctrine-behaviors/config/orm-services.yml }
 
 framework:
     #esi:             ~
@@ -63,6 +64,10 @@ doctrine:
     orm:
         auto_generate_proxy_classes: "%kernel.debug%"
         auto_mapping: true
+        filters:
+            soft_delete:
+                class:   uebb\HateoasBundle\Filter\SoftDeleteFilter
+                enabled: true
 
 # Swiftmailer Configuration
 swiftmailer:
@@ -71,3 +76,38 @@ swiftmailer:
     username:  "%mailer_user%"
     password:  "%mailer_password%"
     spool:     { type: memory }
+
+bazinga_hateoas:
+    metadata:
+        cache:                file
+        file_cache:
+            dir:              %kernel.cache_dir%/hateoas
+
+fos_rest:
+    routing_loader:
+        default_format: json
+    param_fetcher_listener: false
+    disable_csrf_role: ROLE_USER
+    body_listener:
+        decoders:
+            json: fos_rest.decoder.json
+    view:
+        view_response_listener: 'force'
+    unauthorized_challenge: ''
+    access_denied_listener:
+        # all requests using the 'json' format will return a 403 on an access denied violation
+        json: true
+        xml: true
+    format_listener:
+            rules:
+                 - { path: '^/', priorities: ['json', 'xml', 'html'], fallback_format: json, prefer_extension: true }
+
+doctrine_cache:
+    providers:
+        uebb_hateoas_relation_cache:
+            type: array
+            namespace: uebb_hateoas_relation_cache_ns
+        uebb_hateoas_query_cache:
+            type: array
+            namespace: uebb_hateoas_query_cache_ns
+
