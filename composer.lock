@@ -2373,7 +2373,7 @@
             "source": {
                 "type": "git",
                 "url": "ssh://git@jdac.de:10022/uebb/hateoas-bundle.git",
-                "reference": "76c4ebcaed44ac39cd466d1105d6e7263a2a2e5f"
+                "reference": "bab1d9de48da7e553df475013260ba36460e13f4"
             },
             "require": {
                 "doctrine/common": "2.5.x-dev",
@@ -2406,7 +2406,7 @@
                     "email": "jascha.dachtera@gmail.com"
                 }
             ],
-            "time": "2015-02-01 13:09:11"
+            "time": "2015-02-01 19:37:23"
         },
         {
             "name": "willdurand/hateoas",
