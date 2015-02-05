@@ -1,7 +1,9 @@
-app:
-    resource: @AppBundle/Controller/
-    type:     annotation
-
 user:
-    type: rest
+    type: hateoas
     resource: AppBundle\Controller\UserController
+
+
+# Must be at the end
+root:
+    path:      /
+    defaults:  { _controller: HateoasBundle:Root:getRoot }

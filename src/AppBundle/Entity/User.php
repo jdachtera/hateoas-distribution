@@ -21,7 +21,7 @@ use Hateoas\Configuration\Annotation as Hateoas;
  * Class User
  * @package AppBundle\Entity
  * @ORM\Entity
- * @Hateoas\RelationProvider("uebb.hateoas.doctrine_relation_provider:addRelations")
+ * @Hateoas\RelationProvider("uebb.hateoas.relation_provider:addRelations")
  *
  * @Serializer\ExclusionPolicy("all")
  */
