@@ -17,6 +17,10 @@ use Doctrine\ORM\Mapping as ORM;
 use JMS\Serializer\Annotation as Serializer;
 use Hateoas\Configuration\Annotation as Hateoas;
 
+use uebb\HateoasBundle\Annotation as UebbHateoas;
+
+use Symfony\Component\Validator\Constraints as Assert;
+
 /**
  * Class User
  * @package AppBundle\Entity
@@ -27,20 +31,28 @@ use Hateoas\Configuration\Annotation as Hateoas;
  */
 class User extends Resource implements UserInterface, \Serializable{
 
-    public static function getQueryAbleProperties() {
-        return array_merge(parent::getQueryAbleProperties(), array('username'));
-    }
     /**
      * @var String
      * @ORM\Column(type="string")
      *
+     * @UebbHateoas\QueryAble
      * @Serializer\Expose
+     *
+     *
      */
     protected $username;
 
     /**
      * @var array
      * @ORM\Column(type="simple_array")
+     *
+     * @Assert\Choice(
+     *      choices = {"ROLE_ADMIN", "ROLE_USER"},
+     *      multipleMessage = "user.validation.role.invalid",
+     *      multiple = true
+     * )
+     *
+     * @UebbHateoas\QueryAble
      *
      * @Serializer\Expose
      */
@@ -63,6 +75,8 @@ class User extends Resource implements UserInterface, \Serializable{
      * @var User
      *
      * @ORM\ManyToOne(targetEntity="User", inversedBy="employees");
+     *
+     * @UebbHateoas\QueryAble
      */
     protected $employer;
 
@@ -70,6 +84,7 @@ class User extends Resource implements UserInterface, \Serializable{
      * @var ArrayCollection
      *
      * @ORM\OneToMany(targetEntity="User", mappedBy="employer")
+     * @UebbHateoas\QueryAble
      */
     protected $employees;
 
