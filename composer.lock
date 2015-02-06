@@ -4,7 +4,7 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "83b74e2ca32920aaaf056d178b9996e6",
+    "hash": "d0b34b36c12bb061037873dd3289542a",
     "packages": [
         {
             "name": "doctrine/annotations",
@@ -700,12 +700,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/doctrine2.git",
-                "reference": "78d3f511406127cd489aa59e82e4fa3f23e48530"
+                "reference": "4c68a38bd6b7d590dbfa90b2bb116129381935ce"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/doctrine2/zipball/78d3f511406127cd489aa59e82e4fa3f23e48530",
-                "reference": "78d3f511406127cd489aa59e82e4fa3f23e48530",
+                "url": "https://api.github.com/repos/doctrine/doctrine2/zipball/4c68a38bd6b7d590dbfa90b2bb116129381935ce",
+                "reference": "4c68a38bd6b7d590dbfa90b2bb116129381935ce",
                 "shasum": ""
             },
             "require": {
@@ -769,7 +769,7 @@
                 "database",
                 "orm"
             ],
-            "time": "2015-02-03 14:48:44"
+            "time": "2015-02-04 21:42:55"
         },
         {
             "name": "friendsofsymfony/rest-bundle",
@@ -1013,57 +1013,6 @@
                 "parameters management"
             ],
             "time": "2013-12-07 10:10:39"
-        },
-        {
-            "name": "jdachtera/hateoas-bundle",
-            "version": "dev-master",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/jdachtera/hateoas-bundle.git",
-                "reference": "e5eb0481150ae7f9f1ba710ea174d400d90e02ee"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/jdachtera/hateoas-bundle/zipball/e5eb0481150ae7f9f1ba710ea174d400d90e02ee",
-                "reference": "e5eb0481150ae7f9f1ba710ea174d400d90e02ee",
-                "shasum": ""
-            },
-            "require": {
-                "doctrine/common": "2.5.x-dev",
-                "doctrine/dbal": "2.5.*",
-                "doctrine/doctrine-bundle": "1.3.*",
-                "doctrine/doctrine-cache-bundle": "~1.0",
-                "doctrine/orm": "2.5.x-dev",
-                "friendsofsymfony/rest-bundle": "~1.5",
-                "hautelook/templated-uri-bundle": "~1.0",
-                "jms/serializer-bundle": "0.13.*",
-                "knplabs/doctrine-behaviors": "~1.0",
-                "nelmio/cors-bundle": "1.3.0",
-                "pagerfanta/pagerfanta": "~1.0",
-                "symfony/event-dispatcher": "~2.6",
-                "symfony/form": "~2.6",
-                "symfony/validator": "~2.6",
-                "symfony/yaml": "~2.6",
-                "willdurand/hateoas-bundle": "0.1.*",
-                "willdurand/rest-extra-bundle": "~1.0.0"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "uebb\\HateoasBundle\\": "src"
-                }
-            },
-            "authors": [
-                {
-                    "name": "Jascha Dachtera",
-                    "email": "jascha.dachtera@gmail.com"
-                }
-            ],
-            "support": {
-                "source": "https://github.com/jdachtera/hateoas-bundle/tree/master",
-                "issues": "https://github.com/jdachtera/hateoas-bundle/issues"
-            },
-            "time": "2015-02-04 09:27:09"
         },
         {
             "name": "jdorn/sql-formatter",
@@ -2419,6 +2368,57 @@
             "time": "2015-01-25 17:32:08"
         },
         {
+            "name": "uebb/hateoas-bundle",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/uebb/hateoas-bundle.git",
+                "reference": "2544a196c5d5a46afc541bdfaa1f646ce3e5455d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/uebb/hateoas-bundle/zipball/2544a196c5d5a46afc541bdfaa1f646ce3e5455d",
+                "reference": "2544a196c5d5a46afc541bdfaa1f646ce3e5455d",
+                "shasum": ""
+            },
+            "require": {
+                "doctrine/common": "2.5.x-dev",
+                "doctrine/dbal": "2.5.*",
+                "doctrine/doctrine-bundle": "1.3.*",
+                "doctrine/doctrine-cache-bundle": "~1.0",
+                "doctrine/orm": "2.5.x-dev",
+                "friendsofsymfony/rest-bundle": "~1.5",
+                "hautelook/templated-uri-bundle": "~1.0",
+                "jms/serializer-bundle": "0.13.*",
+                "knplabs/doctrine-behaviors": "~1.0",
+                "nelmio/cors-bundle": "1.3.0",
+                "pagerfanta/pagerfanta": "~1.0",
+                "symfony/event-dispatcher": "~2.6",
+                "symfony/form": "~2.6",
+                "symfony/validator": "~2.6",
+                "symfony/yaml": "~2.6",
+                "willdurand/hateoas-bundle": "0.1.*",
+                "willdurand/rest-extra-bundle": "~1.0.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "uebb\\HateoasBundle\\": "src"
+                }
+            },
+            "authors": [
+                {
+                    "name": "Jascha Dachtera",
+                    "email": "jascha.dachtera@gmail.com"
+                }
+            ],
+            "support": {
+                "source": "https://github.com/uebb/hateoas-bundle/tree/master",
+                "issues": "https://github.com/uebb/hateoas-bundle/issues"
+            },
+            "time": "2015-02-06 08:46:34"
+        },
+        {
             "name": "willdurand/hateoas",
             "version": "v2.3.0",
             "source": {
@@ -2732,7 +2732,7 @@
     "stability-flags": {
         "doctrine/common": 20,
         "doctrine/orm": 20,
-        "jdachtera/hateoas-bundle": 20
+        "uebb/hateoas-bundle": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,
