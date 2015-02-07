@@ -48,9 +48,13 @@ class User extends Resource implements UserInterface, \Serializable{
      *
      * @Assert\Choice(
      *      choices = {"ROLE_ADMIN", "ROLE_USER"},
-     *      multipleMessage = "user.validation.role.invalid",
-     *      multiple = true
+     *      multipleMessage = "user.validation.roles.invalid_choice",
+     *      multiple = true,
+     *      minMessage = "user.validation.roles.min",
+     *      min = 1
      * )
+     *
+     * @Assert\NotNull(message = "user.validation.roles.null")
      *
      * @UebbHateoas\QueryAble
      *
@@ -61,6 +65,8 @@ class User extends Resource implements UserInterface, \Serializable{
     /**
      * @ORM\ManyToMany(targetEntity="User", inversedBy="reverseContacts")
      *
+     * @UebbHateoas\QueryAble(maxDepth=1)
+
      * @var ArrayCollection<User>
      */
     protected $contacts;
@@ -68,6 +74,8 @@ class User extends Resource implements UserInterface, \Serializable{
     /**
      * @var ArrayCollection<User>
      * @ORM\ManyToMany(targetEntity="User", mappedBy="contacts")
+     *
+     * @UebbHateoas\QueryAble
      */
     protected $reverseContacts;
 
