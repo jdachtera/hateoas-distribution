@@ -1,5 +1,5 @@
 {
-    "name": "symfony/framework-standard-edition",
+    "name": "uebb/hateoas-distribution",
     "license": "MIT",
     "type": "project",
     "description": "The \"Symfony Standard Edition\" distribution",
@@ -22,13 +22,6 @@
         "incenteev/composer-parameter-handler": "~2.0",
         "uebb/hateoas-bundle": "dev-master"
     },
-
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/uebb/hateoas-bundle.git"
-        }
-    ],
     "require-dev": {
         "sensio/generator-bundle": "~2.3"
     },

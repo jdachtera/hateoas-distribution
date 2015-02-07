@@ -4,7 +4,7 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "d0b34b36c12bb061037873dd3289542a",
+    "hash": "a1ddecc458d54f3c266b9cb1d880f78d",
     "packages": [
         {
             "name": "doctrine/annotations",
@@ -1293,33 +1293,35 @@
         },
         {
             "name": "knplabs/doctrine-behaviors",
-            "version": "v1.0.2",
+            "version": "v1.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/KnpLabs/DoctrineBehaviors.git",
-                "reference": "03ee008e50827827ebf00247200f7214875649b4"
+                "reference": "d7ced932fe89ee9fd812a923373c0237792d8846"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/KnpLabs/DoctrineBehaviors/zipball/03ee008e50827827ebf00247200f7214875649b4",
-                "reference": "03ee008e50827827ebf00247200f7214875649b4",
+                "url": "https://api.github.com/repos/KnpLabs/DoctrineBehaviors/zipball/d7ced932fe89ee9fd812a923373c0237792d8846",
+                "reference": "d7ced932fe89ee9fd812a923373c0237792d8846",
                 "shasum": ""
             },
             "require": {
                 "doctrine/common": ">=2.2",
-                "php": ">=5.4.0"
+                "php": ">=5.4"
             },
             "require-dev": {
-                "doctrine/mongodb-odm": "dev-master",
                 "doctrine/orm": ">=2.2",
+                "ext-pdo_mysql": "*",
                 "ext-pdo_pgsql": "*",
                 "ext-pdo_sqlite": "*",
+                "hexmedia/yaml-linter": "~0.1",
+                "jakub-onderka/php-parallel-lint": "~0.8",
                 "phpunit/phpunit": "~3.7"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.0.x-dev"
+                    "dev-master": "1.1.x-dev"
                 }
             },
             "autoload": {
@@ -1349,7 +1351,7 @@
                 "translatable",
                 "tree"
             ],
-            "time": "2014-09-17 14:27:02"
+            "time": "2015-02-06 12:50:23"
         },
         {
             "name": "kriswallsmith/assetic",
@@ -2373,12 +2375,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/uebb/hateoas-bundle.git",
-                "reference": "2544a196c5d5a46afc541bdfaa1f646ce3e5455d"
+                "reference": "381a719aedaf5514c12c6a1c374536abff48913d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/uebb/hateoas-bundle/zipball/2544a196c5d5a46afc541bdfaa1f646ce3e5455d",
-                "reference": "2544a196c5d5a46afc541bdfaa1f646ce3e5455d",
+                "url": "https://api.github.com/repos/uebb/hateoas-bundle/zipball/381a719aedaf5514c12c6a1c374536abff48913d",
+                "reference": "381a719aedaf5514c12c6a1c374536abff48913d",
                 "shasum": ""
             },
             "require": {
@@ -2406,17 +2408,14 @@
                     "uebb\\HateoasBundle\\": "src"
                 }
             },
+            "notification-url": "https://packagist.org/downloads/",
             "authors": [
                 {
                     "name": "Jascha Dachtera",
                     "email": "jascha.dachtera@gmail.com"
                 }
             ],
-            "support": {
-                "source": "https://github.com/uebb/hateoas-bundle/tree/master",
-                "issues": "https://github.com/uebb/hateoas-bundle/issues"
-            },
-            "time": "2015-02-06 08:46:34"
+            "time": "2015-02-07 17:51:02"
         },
         {
             "name": "willdurand/hateoas",
