@@ -2,7 +2,7 @@
     "name": "uebb/hateoas-distribution",
     "license": "MIT",
     "type": "project",
-    "description": "The \"Symfony Standard Edition\" distribution",
+    "description": "The \"Symfony Standard Edition\" distribution HATEOAS flavored",
     "autoload": {
         "psr-0": { "": "src/", "SymfonyStandard": "app/" }
     },
