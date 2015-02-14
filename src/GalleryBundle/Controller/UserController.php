@@ -1,13 +1,13 @@
 <?php
 
-namespace AppBundle\Controller;
+namespace GalleryBundle\Controller;
 
 use Symfony\Component\HttpFoundation\Request;
 use uebb\HateoasBundle\Controller\HateoasController;
 
 class UserController extends HateoasController
 {
-    protected $entityName = 'AppBundle:User';
+    protected $entityName = 'GalleryBundle:User';
 }
 
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace AppBundle\Form;
+namespace GalleryBundle\Form;
 
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -16,7 +16,10 @@ class UserType extends AbstractType
     {
         $builder
             ->add('username')
-            ->add('roles', 'collection')
+            ->add('plainPassword')
+            ->add('salt')
+            ->add('roles')
+            ->add('galleries')
         ;
     }
     
@@ -26,7 +29,7 @@ class UserType extends AbstractType
     public function setDefaultOptions(OptionsResolverInterface $resolver)
     {
         $resolver->setDefaults(array(
-            'data_class' => 'AppBundle\Entity\User'
+            'data_class' => 'GalleryBundle\Entity\User'
         ));
     }
 
@@ -35,6 +38,6 @@ class UserType extends AbstractType
      */
     public function getName()
     {
-        return 'appbundle_user';
+        return 'gallerybundle_user';
     }
 }

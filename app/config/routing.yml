@@ -1,9 +1,4 @@
-user:
-    type: hateoas
-    resource: AppBundle\Controller\UserController
 
-
-# Must be at the end
-root:
-    path:      /
-    defaults:  { _controller: HateoasBundle:Root:getRoot }
+gallery:
+    resource: @GalleryBundle/Resources/config/routing.yml
+    prefix: /api/v1
