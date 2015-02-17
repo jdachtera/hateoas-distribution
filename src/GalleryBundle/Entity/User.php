@@ -28,7 +28,8 @@ use uebb\HateoasBundle\Annotation as UebbHateoas;
  * @Hateoas\RelationProvider("uebb.hateoas.relation_provider:addRelations")
  * @Serializer\ExclusionPolicy("all")
  */
-class User extends \uebb\HateoasBundle\Entity\User {
+class User extends \uebb\HateoasBundle\Entity\User
+{
 
     /**
      * @var ArrayCollection<Gallery>

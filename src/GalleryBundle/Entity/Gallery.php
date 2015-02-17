@@ -31,6 +31,7 @@ class Gallery extends Resource
      *
      * @ORM\Column(type="string")
      * @Serializer\Expose
+     * @UebbHateoas\FormField
      */
     protected $name;
 
@@ -39,6 +40,7 @@ class Gallery extends Resource
      *
      * @ORM\Column(type="string")
      * @Serializer\Expose
+     * @UebbHateoas\FormField
      */
     protected $description;
 

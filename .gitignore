@@ -10,6 +10,7 @@
 /app/logs/*
 !app/cache/.gitkeep
 !app/logs/.gitkeep
+/app/uploads/
 /app/phpunit.xml
 /build/
 /vendor/

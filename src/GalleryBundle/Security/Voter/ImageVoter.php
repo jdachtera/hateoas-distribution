@@ -98,7 +98,7 @@ class ImageVoter extends ResourceVoter
      * @return int
      */
     protected function addLink(TokenInterface $token, AddLinkActionEventData $data) {
-        return $data->getResource()->getCreatedBy() === $token->getUser();
+        return $data->getResource()->getId() === NULL || $data->getResource()->getCreatedBy() === $token->getUser();
     }
 
 

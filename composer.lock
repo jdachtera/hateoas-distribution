@@ -218,12 +218,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/common.git",
-                "reference": "56360cc13bfd13893731c6c4d1d82005a61d7694"
+                "reference": "f1004b8b336465fafd498ee6539cc2502d16f98f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/common/zipball/56360cc13bfd13893731c6c4d1d82005a61d7694",
-                "reference": "56360cc13bfd13893731c6c4d1d82005a61d7694",
+                "url": "https://api.github.com/repos/doctrine/common/zipball/f1004b8b336465fafd498ee6539cc2502d16f98f",
+                "reference": "f1004b8b336465fafd498ee6539cc2502d16f98f",
                 "shasum": ""
             },
             "require": {
@@ -283,7 +283,7 @@
                 "persistence",
                 "spl"
             ],
-            "time": "2015-01-23 18:43:22"
+            "time": "2015-02-16 02:14:17"
         },
         {
             "name": "doctrine/dbal",
@@ -700,12 +700,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/doctrine2.git",
-                "reference": "4c68a38bd6b7d590dbfa90b2bb116129381935ce"
+                "reference": "38c819ae04c3b4aa10addff8d026fb64634f92fa"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/doctrine2/zipball/4c68a38bd6b7d590dbfa90b2bb116129381935ce",
-                "reference": "4c68a38bd6b7d590dbfa90b2bb116129381935ce",
+                "url": "https://api.github.com/repos/doctrine/doctrine2/zipball/38c819ae04c3b4aa10addff8d026fb64634f92fa",
+                "reference": "38c819ae04c3b4aa10addff8d026fb64634f92fa",
                 "shasum": ""
             },
             "require": {
@@ -769,21 +769,21 @@
                 "database",
                 "orm"
             ],
-            "time": "2015-02-04 21:42:55"
+            "time": "2015-02-16 21:35:28"
         },
         {
             "name": "friendsofsymfony/rest-bundle",
-            "version": "1.5.2",
+            "version": "1.5.3",
             "target-dir": "FOS/RestBundle",
             "source": {
                 "type": "git",
                 "url": "https://github.com/FriendsOfSymfony/FOSRestBundle.git",
-                "reference": "d72f3a41409997ebd91ca34561075c615d2ddcc0"
+                "reference": "fdd21c4c0cb6222ae37efc9362c6a96bd1432412"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/FriendsOfSymfony/FOSRestBundle/zipball/d72f3a41409997ebd91ca34561075c615d2ddcc0",
-                "reference": "d72f3a41409997ebd91ca34561075c615d2ddcc0",
+                "url": "https://api.github.com/repos/FriendsOfSymfony/FOSRestBundle/zipball/fdd21c4c0cb6222ae37efc9362c6a96bd1432412",
+                "reference": "fdd21c4c0cb6222ae37efc9362c6a96bd1432412",
                 "shasum": ""
             },
             "require": {
@@ -847,7 +847,7 @@
             "keywords": [
                 "rest"
             ],
-            "time": "2015-02-09 12:22:33"
+            "time": "2015-02-16 15:26:12"
         },
         {
             "name": "hautelook/templated-uri-bundle",
@@ -2417,12 +2417,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/uebb/hateoas-bundle.git",
-                "reference": "dbafb0cab568e84e6ca960dc94b9f94db8109f3a"
+                "reference": "30b5c00bb3ea30d7448cbebae296403475599d91"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/uebb/hateoas-bundle/zipball/dbafb0cab568e84e6ca960dc94b9f94db8109f3a",
-                "reference": "dbafb0cab568e84e6ca960dc94b9f94db8109f3a",
+                "url": "https://api.github.com/repos/uebb/hateoas-bundle/zipball/30b5c00bb3ea30d7448cbebae296403475599d91",
+                "reference": "30b5c00bb3ea30d7448cbebae296403475599d91",
                 "shasum": ""
             },
             "require": {
@@ -2460,7 +2460,7 @@
                     "email": "jascha.dachtera@gmail.com"
                 }
             ],
-            "time": "2015-02-10 12:43:16"
+            "time": "2015-02-17 21:26:34"
         },
         {
             "name": "willdurand/hateoas",

@@ -1,19 +1,19 @@
 services:
 
-  security.access.gallery_voter:
-    class: GalleryBundle\Security\Voter\GalleryVoter
-    public: false
-    tags:
-      - { name: security.voter }
+    security.access.gallery_voter:
+        class: GalleryBundle\Security\Voter\GalleryVoter
+        parent: uebb.hateoas.entity_voter
+        tags:
+            - { name: security.voter }
 
-  security.access.user_voter:
-    class: GalleryBundle\Security\Voter\UserVoter
-    public: false
-    tags:
-      - { name: security.voter }
+    security.access.user_voter:
+        class: GalleryBundle\Security\Voter\UserVoter
+        parent: uebb.hateoas.entity_voter
+        tags:
+            - { name: security.voter }
 
-  security.access.image_voter:
-    class: GalleryBundle\Security\Voter\ImageVoter
-    public: false
-    tags:
-      - { name: security.voter }
+    security.access.image_voter:
+        class: GalleryBundle\Security\Voter\ImageVoter
+        parent: uebb.hateoas.entity_voter
+        tags:
+            - { name: security.voter }

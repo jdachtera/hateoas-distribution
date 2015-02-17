@@ -5,7 +5,6 @@ use Doctrine\ORM\Mapping as ORM;
 use Hateoas\Configuration\Annotation as Hateoas;
 use JMS\Serializer\Annotation as Serializer;
 use uebb\HateoasBundle\Annotation as UebbHateoas;
-
 use uebb\HateoasBundle\Entity\File;
 
 /**
@@ -22,6 +21,8 @@ class Image extends File
      *
      * @ORM\Column(type="string")
      * @Serializer\Expose
+     *
+     * @UebbHateoas\FormField
      */
     protected $description;
 
@@ -31,6 +32,7 @@ class Image extends File
      * @ORM\ManyToOne(targetEntity="Gallery", inversedBy="images")
      */
     protected $gallery;
+    
 
     /**
      * @return string
@@ -63,6 +65,4 @@ class Image extends File
     {
         $this->gallery = $gallery;
     }
-
-
 }

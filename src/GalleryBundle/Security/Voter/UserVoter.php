@@ -9,6 +9,7 @@
 namespace GalleryBundle\Security\Voter;
 
 
+use Doctrine\Common\Util\Debug;
 use Symfony\Component\Security\Core\Authorization\Voter\VoterInterface;
 use uebb\HateoasBundle\Security\Authorization\Voter\ResourceVoter;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
