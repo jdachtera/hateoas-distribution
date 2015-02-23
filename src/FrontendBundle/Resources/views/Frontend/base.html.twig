@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <base href="{{ baseUrl }}/" />
+
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1" />
+        <!--<link rel="stylesheet" href="bundles/frontend/bower/_bower.css">-->
+
+        {% if environment == 'dev' or environment == 'test' %}
+            <link rel="stylesheet" href="bundles/frontend/css/styles.css">
+        {% else %}
+            <link rel="stylesheet" href="bundles/frontend/css/styles.min.css">
+        {% endif %}
+    </head>
+
+
+
+    <body >
+
+        {% block main %}
+
+        {% endblock %}
+
+        {% if environment == 'dev' or environment == 'test' %}
+            <script type="text/javascript" src="bundles/frontend/bower/_bower.js"></script>
+            <script type="text/javascript" src="bundles/frontend/js/all.js"></script>
+        {% else %}
+            <script type="text/javascript" src="bundles/frontend/bower/_bower.min.js"></script>
+            <script type="text/javascript" src="bundles/frontend/js/all.min.js"></script>
+        {% endif %}
+
+        <script>
+            angular.module('app').value('apiRoot', "{{ apiRooturl }}");
+        </script>
+
+
+    </body>
+</html>

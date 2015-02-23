@@ -1,0 +1,16 @@
+login:
+    path: /login
+    defaults:
+        _controller: FrontendBundle:Frontend:login
+
+login_check:
+    path: /login_check
+    defaults:
+        _controller: FrontendBundle:Frontend:loginCheck
+
+catch_all:
+    path:     /{catchall}
+    defaults:
+        _controller: FrontendBundle:Frontend:index
+    requirements:
+        catchall: "(?!js|css|bundles|_profiler).*"

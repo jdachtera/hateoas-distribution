@@ -1,0 +1,14 @@
+{% extends 'FrontendBundle:Frontend:base.html.twig' %}
+
+{% block main %}
+
+<div ng-app="app" class="container" ng-controller="AppCtrl">
+    <div ng-if="root && (currentUser || !root.hasHref('currentUser'))">
+
+        <div ng-include="'bundles/frontend/templates/header.html'"></div>
+        <div ng-view></div>
+
+    </div>
+</div>
+
+{% endblock %}

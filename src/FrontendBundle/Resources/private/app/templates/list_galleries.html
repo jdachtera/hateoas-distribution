@@ -1,0 +1,13 @@
+<section class="list_galleries row" ng-controller="ListGalleriesCtrl">
+    <div class="col-md-12">
+        <hateoas-list resource="root" rel="galleries">
+            <ul>
+                <li ng-repeat="gallery in galleries">
+
+                    <a href="galleries/{{ gallery.id }}">{{ gallery.name }}</a>
+                </li>
+            </ul>
+        </hateoas-list>
+        <a href="galleries/new">Add a new gallery</a>
+    </div>
+</section>

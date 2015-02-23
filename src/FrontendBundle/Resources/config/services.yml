@@ -1,0 +1,12 @@
+services:
+    uebb.assetic_filter.ngtemplate:
+        class: FrontendBundle\Assetic\Filter\AngularTemplateFilter
+        arguments: [@kernel, @twig]
+        tags:
+            - { name: 'assetic.filter', alias: 'ngtemplate' }
+
+    uebb.assetic_filter.ngscript:
+        class: FrontendBundle\Assetic\Filter\AngularScriptFilter
+        arguments: [%kernel.root_dir%]
+        tags:
+            - { name: 'assetic.filter', alias: 'ngscript' }

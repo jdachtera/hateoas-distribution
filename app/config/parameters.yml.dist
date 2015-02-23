@@ -18,3 +18,7 @@ parameters:
 
     # A secret key that's used to generate certain security-related tokens
     secret:            ThisTokenIsNotSoSecretChangeIt
+
+    # Hateoas
+    uebb.hateoas.upload_dir: %kernel.root_dir%/uploads
+    uebb.hateoas.cache_dir: '%kernel.root_dir%/cache/uebb/hateoas'

@@ -4,7 +4,7 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "fe212409fd2367d96368ae34530005ea",
+    "hash": "1a6fce212da2287a1919930dcd5b8441",
     "packages": [
         {
             "name": "doctrine/annotations",
@@ -700,12 +700,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/doctrine2.git",
-                "reference": "38c819ae04c3b4aa10addff8d026fb64634f92fa"
+                "reference": "4680a7b861f29f2f0dd608a129410ad2227c3f45"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/doctrine2/zipball/38c819ae04c3b4aa10addff8d026fb64634f92fa",
-                "reference": "38c819ae04c3b4aa10addff8d026fb64634f92fa",
+                "url": "https://api.github.com/repos/doctrine/doctrine2/zipball/4680a7b861f29f2f0dd608a129410ad2227c3f45",
+                "reference": "4680a7b861f29f2f0dd608a129410ad2227c3f45",
                 "shasum": ""
             },
             "require": {
@@ -769,7 +769,7 @@
                 "database",
                 "orm"
             ],
-            "time": "2015-02-16 21:35:28"
+            "time": "2015-02-20 19:10:28"
         },
         {
             "name": "friendsofsymfony/rest-bundle",
@@ -1377,7 +1377,7 @@
             ],
             "authors": [
                 {
-                    "name": "Knplabs",
+                    "name": "KnpLabs",
                     "homepage": "http://knplabs.com"
                 }
             ],
@@ -2417,12 +2417,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/uebb/hateoas-bundle.git",
-                "reference": "30b5c00bb3ea30d7448cbebae296403475599d91"
+                "reference": "2fe43809025f8084792cdda507495b90dfd856ca"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/uebb/hateoas-bundle/zipball/30b5c00bb3ea30d7448cbebae296403475599d91",
-                "reference": "30b5c00bb3ea30d7448cbebae296403475599d91",
+                "url": "https://api.github.com/repos/uebb/hateoas-bundle/zipball/2fe43809025f8084792cdda507495b90dfd856ca",
+                "reference": "2fe43809025f8084792cdda507495b90dfd856ca",
                 "shasum": ""
             },
             "require": {
@@ -2460,7 +2460,7 @@
                     "email": "jascha.dachtera@gmail.com"
                 }
             ],
-            "time": "2015-02-17 21:26:34"
+            "time": "2015-02-23 16:35:59"
         },
         {
             "name": "willdurand/hateoas",

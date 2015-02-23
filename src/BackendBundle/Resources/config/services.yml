@@ -1,0 +1,19 @@
+services:
+
+    security.access.gallery_voter:
+        class: BackendBundle\Security\Voter\GalleryVoter
+        parent: uebb.hateoas.entity_voter
+        tags:
+            - { name: security.voter }
+
+    security.access.user_voter:
+        class: BackendBundle\Security\Voter\UserVoter
+        parent: uebb.hateoas.entity_voter
+        tags:
+            - { name: security.voter }
+
+    security.access.image_voter:
+        class: BackendBundle\Security\Voter\ImageVoter
+        parent: uebb.hateoas.entity_voter
+        tags:
+            - { name: security.voter }

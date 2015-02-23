@@ -1,0 +1,14 @@
+<section class="new_gallery row" ng-controller="NewGalleryCtrl">
+    <div class="col-md-12">
+        <form>
+            <label>Name</label>
+            <input ng-model="newGallery.name" />
+            <label>Description</label>
+            <textarea ng-model="newGallery.description">
+
+            </textarea>
+        </form>
+        <a class="btn" ng-click="submit()">Save</a>
+
+    </div>
+</section>

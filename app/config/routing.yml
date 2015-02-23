@@ -1,4 +1,7 @@
 
-gallery:
-    resource: @GalleryBundle/Resources/config/routing.yml
+backend:
+    resource: @BackendBundle/Resources/config/routing.yml
     prefix: /api/v1
+
+frontend:
+    resource: @FrontendBundle/Resources/config/routing.yml

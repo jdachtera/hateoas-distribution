@@ -1,0 +1,17 @@
+root:
+    path: /
+    defaults:
+        _controller: HateoasBundle:Root:getRoot
+    methods: GET
+
+user:
+    type: hateoas
+    resource: BackendBundle\Controller\UserController
+
+image:
+    type: hateoas
+    resource: BackendBundle\Controller\ImageController
+
+gallery:
+    type: hateoas
+    resource: BackendBundle\Controller\GalleryController

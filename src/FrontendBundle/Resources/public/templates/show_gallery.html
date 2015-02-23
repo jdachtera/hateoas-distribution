@@ -1,0 +1,17 @@
+<section class="show_gallery" ng-controller="ShowGalleryCtrl">
+    <div class="col-md-12">
+        <hateoas-link resource="root" rel="galleries/{{id}}" as="gallery">
+            <h1>{{ gallery.name }}</h1>
+            <p>{{ gallery.description }}</p>
+            <hateoas-list resource="gallery" rel="images" udpate="update">
+                <div class="row">
+                    <div class="col-md-2" ng-repeat="image in images">
+                        <img ng-src="{{ image.getHref('download', { width: 200, height: 150 }) }}" />
+                        <a ng-click="remove(image)">Remove</a>
+                    </div>
+                </div>
+            </hateoas-list>
+            <a href="galleries/{{gallery.id}}/new">Add an image</a>
+        </hateoas-link>
+    </div>
+</section>

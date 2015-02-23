@@ -35,12 +35,15 @@ twig:
 assetic:
     debug:          "%kernel.debug%"
     use_controller: false
-    bundles:        [ ]
+    bundles:        [FrontendBundle]
     #java: /usr/bin/java
     filters:
         cssrewrite: ~
+        sass:    ~
+        compass: ~
+        jsmin: ~
         #closure:
-        #    jar: "%kernel.root_dir%/Resources/java/compiler.jar"
+        #    jar: "%kernel.root_dir%/Resources/java/ngcompiler.jar"
         #yui_css:
         #    jar: "%kernel.root_dir%/Resources/java/yuicompressor-2.4.7.jar"
 
@@ -84,8 +87,6 @@ bazinga_hateoas:
             dir:              %kernel.cache_dir%/hateoas
 
 fos_rest:
-    #   routing_loader:
-        #default_format: xml
     param_fetcher_listener: true
     disable_csrf_role: ROLE_USER
     body_listener:
@@ -100,8 +101,9 @@ fos_rest:
         json: true
         xml: true
     format_listener:
-            rules:
-                 - { path: '^/', priorities: ['json', 'xml'], fallback_format: json, prefer_extension: false }
+        rules:
+            - { path: '^/api', priorities: ['json', 'xml'], fallback_format: json, prefer_extension: false }
+            - { path: '^/', priorities: [ 'text/html', 'text/css', 'application-x/javascript', 'application/javascript', 'text/javascript', '*/*'],  prefer_extension: false }
 
 doctrine_cache:
     providers:
@@ -111,4 +113,3 @@ doctrine_cache:
         uebb_hateoas_query_cache:
             type: array
             namespace: uebb_hateoas_query_cache_ns
-

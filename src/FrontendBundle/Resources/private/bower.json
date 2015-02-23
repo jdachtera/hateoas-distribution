@@ -1,0 +1,48 @@
+{
+  "name": "private",
+  "version": "0.0.0",
+  "dependencies": {
+    "angular": "*",
+    "angular-cookies": "*",
+    "angular-sanitize": "*",
+    "angular-route": "*",
+    "angular-animate": "*",
+    "angular-bootstrap": "*",
+    "jquery": "*",
+    "URIjs": "~1.14.1",
+    "uebb-angular-hateoas": "~0.0.1",
+    "angular-translate": "~2.6.0",
+    "angular-bluebird-promises": "~0.2.0",
+    "bootstrap-sass-official": "~3.3.3"
+  },
+  "devDependencies": {
+    "angular-mocks": "*",
+    "angular-scenario": "*"
+  },
+  "overrides": {
+    "angular": {
+      "dependencies": {
+        "jquery": "*"
+      }
+    },
+    "bootstrap-sass-official": {
+      "main": [
+        "assets/fonts/bootstrap/glyphicons-halflings-regular.eot",
+        "assets/fonts/bootstrap/glyphicons-halflings-regular.svg",
+        "assets/fonts/bootstrap/glyphicons-halflings-regular.ttf",
+        "assets/fonts/bootstrap/glyphicons-halflings-regular.woff",
+        "assets/fonts/bootstrap/glyphicons-halflings-regular.woff2"
+      ]
+    },
+    "angular-bluebird-promises": {
+      "main": [
+        "src/angular-bluebird-promises.js"
+      ]
+    },
+    "URIjs": {
+      "main": [
+        "src/URI.js"
+      ]
+    }
+  }
+}

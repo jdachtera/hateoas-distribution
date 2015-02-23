@@ -1,0 +1,15 @@
+<section class="new_image row" ng-controller="NewImageCtrl">
+
+    <div class="col-md-12">
+
+        <hateoas-link resource="root" rel="galleries/{{id}}" as="gallery">
+            <form>
+                <input ng-model="image.description" />
+                <select-file link-resource="gallery" link-rel="gallery" resource="image"></select-file>
+            </form>
+        </hateoas-link>
+
+        <a class="btn" ng-click="submit()">Save</a>
+    </div>
+
+</section>
