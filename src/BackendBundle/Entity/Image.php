@@ -6,6 +6,7 @@ use Hateoas\Configuration\Annotation as Hateoas;
 use JMS\Serializer\Annotation as Serializer;
 use uebb\HateoasBundle\Annotation as UebbHateoas;
 use uebb\HateoasBundle\Entity\File;
+use uebb\HateoasBundle\Entity\ImageInterface;
 
 /**
  * Class Image
@@ -14,7 +15,7 @@ use uebb\HateoasBundle\Entity\File;
  * @Hateoas\RelationProvider("uebb.hateoas.relation_provider:addRelations")
  * @Serializer\ExclusionPolicy("all")
  */
-class Image extends File
+class Image extends File implements ImageInterface
 {
     /**
      * @var string
@@ -24,7 +25,7 @@ class Image extends File
      *
      * @UebbHateoas\FormField
      */
-    protected $description;
+    protected $description = '';
 
     /**
      * @var Gallery

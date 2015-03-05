@@ -26,12 +26,6 @@
     "require-dev": {
         "sensio/generator-bundle": "~2.3"
     },
-    "repositories": [
-      {
-        "type":"vcs",
-        "url":"https://github.com/piotr-cz/AsseticAngularJsBundle.git"
-      }
-    ],
     "scripts": {
         "post-root-package-install": [
             "SymfonyStandard\\Composer::hookRootPackageInstall"

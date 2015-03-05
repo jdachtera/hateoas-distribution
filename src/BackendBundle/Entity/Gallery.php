@@ -32,6 +32,7 @@ class Gallery extends Resource
      * @ORM\Column(type="string")
      * @Serializer\Expose
      * @UebbHateoas\FormField
+     * @UebbHateoas\QueryAble()
      */
     protected $name = '';
 

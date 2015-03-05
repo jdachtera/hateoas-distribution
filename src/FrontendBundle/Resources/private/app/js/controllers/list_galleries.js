@@ -8,6 +8,9 @@ app.controller('ListGalleriesCtrl', function ($scope) {
 
 	'use strict';
 
+    var viewModel = $scope.listGalleries = {};
+
+
 	console.log('Controller ===  ListGalleriesCtrl');
 });
 

@@ -11207,6 +11207,506 @@ return jQuery;
   return URI;
 }));
 
+/*!
+ * URI.js - Mutating URLs
+ * URI Template Support - http://tools.ietf.org/html/rfc6570
+ *
+ * Version: 1.14.1
+ *
+ * Author: Rodney Rehm
+ * Web: http://medialize.github.io/URI.js/
+ *
+ * Licensed under
+ *   MIT License http://www.opensource.org/licenses/mit-license
+ *   GPL v3 http://opensource.org/licenses/GPL-3.0
+ *
+ */
+(function (root, factory) {
+  'use strict';
+  // https://github.com/umdjs/umd/blob/master/returnExports.js
+  if (typeof exports === 'object') {
+    // Node
+    module.exports = factory(require('./URI'));
+  } else if (typeof define === 'function' && define.amd) {
+    // AMD. Register as an anonymous module.
+    define(['./URI'], factory);
+  } else {
+    // Browser globals (root is window)
+    root.URITemplate = factory(root.URI, root);
+  }
+}(this, function (URI, root) {
+  'use strict';
+  // FIXME: v2.0.0 renamce non-camelCase properties to uppercase
+  /*jshint camelcase: false */
+
+  // save current URITemplate variable, if any
+  var _URITemplate = root && root.URITemplate;
+
+  var hasOwn = Object.prototype.hasOwnProperty;
+  function URITemplate(expression) {
+    // serve from cache where possible
+    if (URITemplate._cache[expression]) {
+      return URITemplate._cache[expression];
+    }
+
+    // Allow instantiation without the 'new' keyword
+    if (!(this instanceof URITemplate)) {
+      return new URITemplate(expression);
+    }
+
+    this.expression = expression;
+    URITemplate._cache[expression] = this;
+    return this;
+  }
+
+  function Data(data) {
+    this.data = data;
+    this.cache = {};
+  }
+
+  var p = URITemplate.prototype;
+  // list of operators and their defined options
+  var operators = {
+    // Simple string expansion
+    '' : {
+      prefix: '',
+      separator: ',',
+      named: false,
+      empty_name_separator: false,
+      encode : 'encode'
+    },
+    // Reserved character strings
+    '+' : {
+      prefix: '',
+      separator: ',',
+      named: false,
+      empty_name_separator: false,
+      encode : 'encodeReserved'
+    },
+    // Fragment identifiers prefixed by '#'
+    '#' : {
+      prefix: '#',
+      separator: ',',
+      named: false,
+      empty_name_separator: false,
+      encode : 'encodeReserved'
+    },
+    // Name labels or extensions prefixed by '.'
+    '.' : {
+      prefix: '.',
+      separator: '.',
+      named: false,
+      empty_name_separator: false,
+      encode : 'encode'
+    },
+    // Path segments prefixed by '/'
+    '/' : {
+      prefix: '/',
+      separator: '/',
+      named: false,
+      empty_name_separator: false,
+      encode : 'encode'
+    },
+    // Path parameter name or name=value pairs prefixed by ';'
+    ';' : {
+      prefix: ';',
+      separator: ';',
+      named: true,
+      empty_name_separator: false,
+      encode : 'encode'
+    },
+    // Query component beginning with '?' and consisting
+    // of name=value pairs separated by '&'; an
+    '?' : {
+      prefix: '?',
+      separator: '&',
+      named: true,
+      empty_name_separator: true,
+      encode : 'encode'
+    },
+    // Continuation of query-style &name=value pairs
+    // within a literal query component.
+    '&' : {
+      prefix: '&',
+      separator: '&',
+      named: true,
+      empty_name_separator: true,
+      encode : 'encode'
+    }
+
+    // The operator characters equals ("="), comma (","), exclamation ("!"),
+    // at sign ("@"), and pipe ("|") are reserved for future extensions.
+  };
+
+  // storage for already parsed templates
+  URITemplate._cache = {};
+  // pattern to identify expressions [operator, variable-list] in template
+  URITemplate.EXPRESSION_PATTERN = /\{([^a-zA-Z0-9%_]?)([^\}]+)(\}|$)/g;
+  // pattern to identify variables [name, explode, maxlength] in variable-list
+  URITemplate.VARIABLE_PATTERN = /^([^*:]+)((\*)|:(\d+))?$/;
+  // pattern to verify variable name integrity
+  URITemplate.VARIABLE_NAME_PATTERN = /[^a-zA-Z0-9%_]/;
+
+  // expand parsed expression (expression, not template!)
+  URITemplate.expand = function(expression, data) {
+    // container for defined options for the given operator
+    var options = operators[expression.operator];
+    // expansion type (include keys or not)
+    var type = options.named ? 'Named' : 'Unnamed';
+    // list of variables within the expression
+    var variables = expression.variables;
+    // result buffer for evaluating the expression
+    var buffer = [];
+    var d, variable, i;
+
+    for (i = 0; (variable = variables[i]); i++) {
+      // fetch simplified data source
+      d = data.get(variable.name);
+      if (!d.val.length) {
+        if (d.type) {
+          // empty variables (empty string)
+          // still lead to a separator being appended!
+          buffer.push('');
+        }
+        // no data, no action
+        continue;
+      }
+
+      // expand the given variable
+      buffer.push(URITemplate['expand' + type](
+        d,
+        options,
+        variable.explode,
+        variable.explode && options.separator || ',',
+        variable.maxlength,
+        variable.name
+      ));
+    }
+
+    if (buffer.length) {
+      return options.prefix + buffer.join(options.separator);
+    } else {
+      // prefix is not prepended for empty expressions
+      return '';
+    }
+  };
+  // expand a named variable
+  URITemplate.expandNamed = function(d, options, explode, separator, length, name) {
+    // variable result buffer
+    var result = '';
+    // peformance crap
+    var encode = options.encode;
+    var empty_name_separator = options.empty_name_separator;
+    // flag noting if values are already encoded
+    var _encode = !d[encode].length;
+    // key for named expansion
+    var _name = d.type === 2 ? '': URI[encode](name);
+    var _value, i, l;
+
+    // for each found value
+    for (i = 0, l = d.val.length; i < l; i++) {
+      if (length) {
+        // maxlength must be determined before encoding can happen
+        _value = URI[encode](d.val[i][1].substring(0, length));
+        if (d.type === 2) {
+          // apply maxlength to keys of objects as well
+          _name = URI[encode](d.val[i][0].substring(0, length));
+        }
+      } else if (_encode) {
+        // encode value
+        _value = URI[encode](d.val[i][1]);
+        if (d.type === 2) {
+          // encode name and cache encoded value
+          _name = URI[encode](d.val[i][0]);
+          d[encode].push([_name, _value]);
+        } else {
+          // cache encoded value
+          d[encode].push([undefined, _value]);
+        }
+      } else {
+        // values are already encoded and can be pulled from cache
+        _value = d[encode][i][1];
+        if (d.type === 2) {
+          _name = d[encode][i][0];
+        }
+      }
+
+      if (result) {
+        // unless we're the first value, prepend the separator
+        result += separator;
+      }
+
+      if (!explode) {
+        if (!i) {
+          // first element, so prepend variable name
+          result += URI[encode](name) + (empty_name_separator || _value ? '=' : '');
+        }
+
+        if (d.type === 2) {
+          // without explode-modifier, keys of objects are returned comma-separated
+          result += _name + ',';
+        }
+
+        result += _value;
+      } else {
+        // only add the = if it is either default (?&) or there actually is a value (;)
+        result += _name + (empty_name_separator || _value ? '=' : '') + _value;
+      }
+    }
+
+    return result;
+  };
+  // expand an unnamed variable
+  URITemplate.expandUnnamed = function(d, options, explode, separator, length) {
+    // variable result buffer
+    var result = '';
+    // performance crap
+    var encode = options.encode;
+    var empty_name_separator = options.empty_name_separator;
+    // flag noting if values are already encoded
+    var _encode = !d[encode].length;
+    var _name, _value, i, l;
+
+    // for each found value
+    for (i = 0, l = d.val.length; i < l; i++) {
+      if (length) {
+        // maxlength must be determined before encoding can happen
+        _value = URI[encode](d.val[i][1].substring(0, length));
+      } else if (_encode) {
+        // encode and cache value
+        _value = URI[encode](d.val[i][1]);
+        d[encode].push([
+          d.type === 2 ? URI[encode](d.val[i][0]) : undefined,
+          _value
+        ]);
+      } else {
+        // value already encoded, pull from cache
+        _value = d[encode][i][1];
+      }
+
+      if (result) {
+        // unless we're the first value, prepend the separator
+        result += separator;
+      }
+
+      if (d.type === 2) {
+        if (length) {
+          // maxlength also applies to keys of objects
+          _name = URI[encode](d.val[i][0].substring(0, length));
+        } else {
+          // at this point the name must already be encoded
+          _name = d[encode][i][0];
+        }
+
+        result += _name;
+        if (explode) {
+          // explode-modifier separates name and value by "="
+          result += (empty_name_separator || _value ? '=' : '');
+        } else {
+          // no explode-modifier separates name and value by ","
+          result += ',';
+        }
+      }
+
+      result += _value;
+    }
+
+    return result;
+  };
+
+  URITemplate.noConflict = function() {
+    if (root.URITemplate === URITemplate) {
+      root.URITemplate = _URITemplate;
+    }
+
+    return URITemplate;
+  };
+
+  // expand template through given data map
+  p.expand = function(data) {
+    var result = '';
+
+    if (!this.parts || !this.parts.length) {
+      // lazilyy parse the template
+      this.parse();
+    }
+
+    if (!(data instanceof Data)) {
+      // make given data available through the
+      // optimized data handling thingie
+      data = new Data(data);
+    }
+
+    for (var i = 0, l = this.parts.length; i < l; i++) {
+      /*jshint laxbreak: true */
+      result += typeof this.parts[i] === 'string'
+        // literal string
+        ? this.parts[i]
+        // expression
+        : URITemplate.expand(this.parts[i], data);
+      /*jshint laxbreak: false */
+    }
+
+    return result;
+  };
+  // parse template into action tokens
+  p.parse = function() {
+    // performance crap
+    var expression = this.expression;
+    var ePattern = URITemplate.EXPRESSION_PATTERN;
+    var vPattern = URITemplate.VARIABLE_PATTERN;
+    var nPattern = URITemplate.VARIABLE_NAME_PATTERN;
+    // token result buffer
+    var parts = [];
+      // position within source template
+    var pos = 0;
+    var variables, eMatch, vMatch;
+
+    // RegExp is shared accross all templates,
+    // which requires a manual reset
+    ePattern.lastIndex = 0;
+    // I don't like while(foo = bar()) loops,
+    // to make things simpler I go while(true) and break when required
+    while (true) {
+      eMatch = ePattern.exec(expression);
+      if (eMatch === null) {
+        // push trailing literal
+        parts.push(expression.substring(pos));
+        break;
+      } else {
+        // push leading literal
+        parts.push(expression.substring(pos, eMatch.index));
+        pos = eMatch.index + eMatch[0].length;
+      }
+
+      if (!operators[eMatch[1]]) {
+        throw new Error('Unknown Operator "' + eMatch[1]  + '" in "' + eMatch[0] + '"');
+      } else if (!eMatch[3]) {
+        throw new Error('Unclosed Expression "' + eMatch[0]  + '"');
+      }
+
+      // parse variable-list
+      variables = eMatch[2].split(',');
+      for (var i = 0, l = variables.length; i < l; i++) {
+        vMatch = variables[i].match(vPattern);
+        if (vMatch === null) {
+          throw new Error('Invalid Variable "' + variables[i] + '" in "' + eMatch[0] + '"');
+        } else if (vMatch[1].match(nPattern)) {
+          throw new Error('Invalid Variable Name "' + vMatch[1] + '" in "' + eMatch[0] + '"');
+        }
+
+        variables[i] = {
+          name: vMatch[1],
+          explode: !!vMatch[3],
+          maxlength: vMatch[4] && parseInt(vMatch[4], 10)
+        };
+      }
+
+      if (!variables.length) {
+        throw new Error('Expression Missing Variable(s) "' + eMatch[0] + '"');
+      }
+
+      parts.push({
+        expression: eMatch[0],
+        operator: eMatch[1],
+        variables: variables
+      });
+    }
+
+    if (!parts.length) {
+      // template doesn't contain any expressions
+      // so it is a simple literal string
+      // this probably should fire a warning or something?
+      parts.push(expression);
+    }
+
+    this.parts = parts;
+    return this;
+  };
+
+  // simplify data structures
+  Data.prototype.get = function(key) {
+    // performance crap
+    var data = this.data;
+    // cache for processed data-point
+    var d = {
+      // type of data 0: undefined/null, 1: string, 2: object, 3: array
+      type: 0,
+      // original values (except undefined/null)
+      val: [],
+      // cache for encoded values (only for non-maxlength expansion)
+      encode: [],
+      encodeReserved: []
+    };
+    var i, l, value;
+
+    if (this.cache[key] !== undefined) {
+      // we've already processed this key
+      return this.cache[key];
+    }
+
+    this.cache[key] = d;
+
+    if (String(Object.prototype.toString.call(data)) === '[object Function]') {
+      // data itself is a callback (global callback)
+      value = data(key);
+    } else if (String(Object.prototype.toString.call(data[key])) === '[object Function]') {
+      // data is a map of callbacks (local callback)
+      value = data[key](key);
+    } else {
+      // data is a map of data
+      value = data[key];
+    }
+
+    // generalize input into [ [name1, value1], [name2, value2], … ]
+    // so expansion has to deal with a single data structure only
+    if (value === undefined || value === null) {
+      // undefined and null values are to be ignored completely
+      return d;
+    } else if (String(Object.prototype.toString.call(value)) === '[object Array]') {
+      for (i = 0, l = value.length; i < l; i++) {
+        if (value[i] !== undefined && value[i] !== null) {
+          // arrays don't have names
+          d.val.push([undefined, String(value[i])]);
+        }
+      }
+
+      if (d.val.length) {
+        // only treat non-empty arrays as arrays
+        d.type = 3; // array
+      }
+    } else if (String(Object.prototype.toString.call(value)) === '[object Object]') {
+      for (i in value) {
+        if (hasOwn.call(value, i) && value[i] !== undefined && value[i] !== null) {
+          // objects have keys, remember them for named expansion
+          d.val.push([i, String(value[i])]);
+        }
+      }
+
+      if (d.val.length) {
+        // only treat non-empty objects as objects
+        d.type = 2; // object
+      }
+    } else {
+      d.type = 1; // primitive string (could've been string, number, boolean and objects with a toString())
+      // arrays don't have names
+      d.val.push([undefined, String(value)]);
+    }
+
+    return d;
+  };
+
+  // hook into URI for fluid access
+  URI.expand = function(expression, data) {
+    var template = new URITemplate(expression);
+    var expansion = template.expand(data);
+
+    return new URI(expansion);
+  };
+
+  return URITemplate;
+}));
+
 /**
  * bluebird build version 2.3.11
  * Features enabled: core, race, call_get, generators, map, nodeify, promisify, props, reduce, settle, some, progress, cancel, using, filter, any, each, timers
@@ -50915,79 +51415,6 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
     "");
 }]);
 
-(function(angular, Promise) {
-
-  angular
-    .module('mwl.bluebird', [])
-    .constant('Bluebird', Promise)
-    .config(function($provide, Bluebird) {
-
-      //Make bluebird API compatible with angular's subset of $q
-      //Adapted from: http://bit.ly/1zffMKH
-      function bind(fn, ctx) {
-        return function() {
-          return fn.apply(ctx, arguments);
-        };
-      }
-
-      Bluebird.defer = function() {
-        var b = Bluebird.pending();
-        b.resolve = bind(b.fulfill, b);
-        b.reject = bind(b.reject, b);
-        b.notify = bind(b.progress, b);
-        return b;
-      };
-
-      Bluebird.reject = Bluebird.rejected;
-
-      Bluebird.when = function(a) {
-        return Bluebird.cast(a);
-      };
-
-      var originalAll = Bluebird.all;
-      Bluebird.all = function(promises) {
-
-        if (angular.isObject(promises)) {
-
-          var promiseArray = [], promiseKeysArray = [];
-          angular.forEach(promises, function(promise, key) {
-
-            promiseKeysArray.push(key);
-            promiseArray.push(promise);
-
-          });
-
-          return originalAll(promiseArray).then(function(results) {
-
-            var objectResult = {};
-            angular.forEach(results, function(result, index) {
-              objectResult[promiseKeysArray[index]] = result;
-            });
-            return objectResult;
-
-          });
-
-        } else {
-          return originalAll(promises);
-        }
-
-      };
-
-      Bluebird.onPossiblyUnhandledRejection(angular.noop);
-
-      $provide.decorator('$q', function() {
-        return Bluebird;
-      });
-
-    }).run(function($rootScope, Bluebird) {
-
-      Bluebird.setScheduler(function(cb) {
-        $rootScope.$evalAsync(cb);
-      });
-
-    });
-
-})(angular, Promise);
 /*!
  * angular-translate - v2.6.0 - 2015-02-08
  * http://github.com/angular-translate/angular-translate
@@ -53343,13 +53770,110 @@ angular.module('pascalprecht.translate')
   return translateFilter;
 }]);
 
-angular.module("uebb.hateoas.templates", []).run(["$templateCache", function($templateCache) {$templateCache.put("uebb_hateoas_templates/hateoas-link.html","<div>\n    <div ng-show=\"promise.isFulfilled()\" class=\"transclude-content\"></div>\n\n    <div ng-if=\"!disableSpinner && (!promise || promise.isPending())\">\n        <span class=\"fa fa-spinner fa-spin\"></span> {{ labelPrefix + \'.loading\' }}\n    </div>\n\n    <div ng-if=\"promise.isRejected()\">\n        {{ labelPrefix + \'.error\' }}\n    </div>\n\n\n</div>");
-$templateCache.put("uebb_hateoas_templates/hateoas-list.html","<div ng-show=\"if !== false\" class=\"hateoas-list\">\n\n	<div ng-show=\"orderFields\" class=\"element-spacing-small\">\n		{{ \'general.list.order.label\' | translate }} &nbsp;&nbsp;&nbsp;\n		<div class=\"btn-group\">\n			<a href data-toggle=\"dropdown\" class=\"btn btn-link dropdown-toggle\">\n				<i class=\"fa fa-fw fa-sort\"></i>{{ labelPrefix + \'.field.\' + orderField | translate }} <span class=\"caret\"></span>\n			</a>\n			<ul class=\"dropdown-menu\" role=\"menu\">\n				<li ng-repeat=\"field in orderFields\" ng-class=\"{\'active\': orderField == field}\">\n					<a dropdown-toggle href ng-click=\"setOrder(field, orderDirection)\"><i class=\"fa fa-fw fa-sort\"></i>{{ labelPrefix + \'.field.\' + field | translate }} </a>\n				</li>\n			</ul>\n		</div>\n		<div class=\"btn-group\">\n			<a href data-toggle=\"dropdown\" class=\"btn btn-link dropdown-toggle\">\n				<i class=\"fa fa-fw\" ng-class=\"{\'fa-sort-amount-asc\': orderDirection == \'ASC\', \'fa-sort-amount-desc\': orderDirection == \'DESC\'}\"></i>{{ \'general.list.direction.\' + orderDirection | translate }} <span class=\"caret\"></span>\n			</a>\n			<ul class=\"dropdown-menu\" role=\"menu\">\n				<li ng-class=\"{\'active\': orderDirection == \'ASC\'}\">\n					<a dropdown-toggle href ng-click=\"setOrder(orderField, \'ASC\')\"><i class=\"fa fa-fw fa-sort-amount-asc\"></i>{{ \'general.list.order.direction.ASC\' | translate }}</a>\n				</li>\n				<li ng-class=\"{\'active\': orderDirection == \'DESC\'}\">\n					<a dropdown-toggle href ng-click=\"setOrder(orderField, \'DESC\')\"><i class=\"fa fa-fw fa-sort-amount-desc\"></i>{{ \'general.list.order.direction.DESC\' | translate }}</a>\n				</li>\n			</ul>\n		</div>\n	</div>\n\n\n	<div class=\"response element-spacing-small\" ng-show=\"!disableMessages\">\n\n		<div ng-show=\"!disableSpinner && (!promise || promise.isPending())\">\n			<span class=\"fa fa-spinner fa-spin\"></span> {{ labelPrefix + \'.loading\' | translate }}\n		</div>\n\n		<div ng-show=\"transcludeScope.error\">\n			{{ labelPrefix + \'.error\' | translate }}\n			{{trancludeScope.error}}\n		</div>\n\n		<div ng-show=\"promise.isResolved() && !transcludeScope.error && transcludeScope[as || rel].length === 0\">\n			{{ labelPrefix + \'.empty\' | translate }}\n		</div>\n\n	</div>\n\n	<div ng-show=\"promise.isResolved() && !transcludeScope.error\" class=\"hateoas-list-items transclude-content\"></div>\n\n	<div class=\"hateoas-pagination\">\n		<pagination\n				class=\"pagination-sm\"\n				ng-show=\"!disablePagination && pages > 1\"\n				total-items=\"pages * limit\"\n				items-per-page=\"limit\"\n				ng-model=\"page\"\n				previous-text=\"&lt;\"\n				next-text=\"&gt;\"\n				first-text=\"&lt;&lt;\"\n				last-text=\"&gt;&gt;\"\n				boundary-links=\"true\"\n				max-size=\"3\"\n				rotate=\"false\">\n		</pagination>\n	</div>\n\n</div>\n\n<div ng-show=\"bare\" class=\"transclude-bare\"></div>\n");
-$templateCache.put("uebb_hateoas_templates/hateoasSelectList.html","<div class=\"row\">\n	<div class=\"col-sm-12\">\n		<div class=\"hateoas-select-list-wrap\">\n			<div class=\"row hateoas-select-list\">\n				<div class=\"col-sm-5 selected-items-wrap\">\n					<div class=\"selected-items\">\n						<h2>{{ (labelPrefix + \'.selected.header\') | translate }}</h2>\n						<input type=\"text\" ng-model=\"searchSelected\" placeholder=\"{{ labelPrefix + \'.placeholder.search\' | translate }}\" class=\"form-control\" />\n						<hateoas-list resource=\"resource\"\n									  rel=\"{{ rel }}\"\n									  as=\"items\"\n									  update=\"updateSelected\"\n									  search=\"searchSelected\"\n									  label-prefix=\"{{ labelPrefix }}.selected\"\n									  order-field=\"{{ orderField }}\"\n									  order-direction=\"{{ orderField }}\">\n							<table class=\"table table-border table-hover table-condensed table-striped\">\n								<tr ng-if=\"items.length > 0\">\n									<th colspan=\"2\">{{ (labelPrefix + \'.selected.currently_assigned\') | translate }}</th>\n								</tr>\n								<tr ng-repeat=\"item in items\" ng-class=\"{ removed: inArray(item, removed) }\">\n									<td ng-bind=\"{{ itemLabel }}\"></td>\n									<td style=\"width: 50px;\" class=\"text-center\">\n										<a class=\"btn-pointer\"\n										   ng-click=\"remove(item)\"\n										   ng-hide=\"inArray(item, removed)\"\n										   tooltip=\"{{ \'general.item.remove\' | translate }}\"\n										   tooltip-append-to-body=\"true\"><span class=\"fa fa-trash-o\"></span></a>\n										<a class=\"btn-pointer\"\n										   ng-click=\"undoRemove(item)\"\n										   ng-show=\"inArray(item, removed)\"\n										   tooltip=\"{{ \'general.item.undoRemove\' | translate }}\"\n										   tooltip-append-to-body=\"true\"><span class=\"fa fa-undo\"></span></a>\n									</td>\n								</tr>\n\n								<tr ng-if=\"added.length > 0\">\n									<th colspan=\"2\">{{ (labelPrefix + \'.selected.recently_added\') | translate }}</th>\n								</tr>\n								<tr ng-repeat=\"item in added\">\n									<td ng-bind=\"{{ itemLabel }}\"></td>\n									<td style=\"width: 50px;\" class=\"text-center\">\n										<a class=\"btn-pointer\"\n										   ng-click=\"undoAdd(item)\"\n										   tooltip=\"{{ \'general.item.remove\' | translate }}\"\n										   tooltip-append-to-body=\"true\"><span class=\"fa fa-trash-o\"></span></a>\n									</td>\n								</tr>\n							</table>\n						</hateoas-list>\n					</div>\n				</div>\n\n				<div class=\"col-sm-2 chevron-wrap\">\n					<div class=\"chevron\">\n						<span class=\"fa fa-chevron-left fa-2x hidden-xs\"></span>\n						<span class=\"fa fa-chevron-up fa-2x visible-xs\"></span>\n					</div>\n				</div>\n\n				<div class=\"col-sm-5 available-items\">\n					<h2>{{ (labelPrefix + \'.available.header\') | translate }}</h2>\n					<input type=\"text\" ng-model=\"searchAvailable\" placeholder=\"{{ labelPrefix + \'.placeholder.search\' | translate }}\" class=\"form-control\" />\n					<hateoas-list resource=\"srcResource\"\n								  rel=\"{{ srcRel }}\"\n								  as=\"items\"\n								  update=\"updateAvailable\"\n								  search=\"searchAvailable\"\n								  filter=\"srcFilter\"\n								  if=\"resource\"\n								  label-prefix=\"{{ labelPrefix }}.available\"\n								  order-field=\"{{ orderField }}\"\n								  order-direction=\"{{ orderDirection }}\">\n\n						<table class=\"table table-border table-hover table-condensed table-striped\">\n							<tbody>\n								<tr ng-repeat=\"item in items\"\n									ng-hide=\"inArray(item, added)\"\n									ng-click=\"add(item)\"\n									style=\"cursor: pointer\"\n									tooltip=\"{{ \'general.item.add\' | translate }}\"\n									tooltip-append-to-body=\"true\">\n									<td style=\"width: 20px;\" class=\"text-center\">\n										<a class=\"btn-pointer\" ng-click=\"add(item)\"><span class=\"fa fa-plus\"></span></a>\n									</td>\n									<td ng-bind=\"{{ itemLabel }}\"></td>\n								</tr>\n							</tbody>\n						</table>\n					</hateoas-list>\n				</div>\n			</div>\n		</div>\n	</div>\n</div>");
-$templateCache.put("uebb_hateoas_templates/select-file.html","<div class=\"select-file\">\n\n        <hateoas-list disable-pagination=\"true\" disable-messages=\"true\" resource=\"linkResource\" limit=\"0\" rel=\"{{linkRel}}\" as=\"existingFiles\" update=\"data.updateExisting\">\n            <div ng-if=\"existingFiles.length > 0\" class=\"existing-files\">\n                <h5>{{ \'file.label.existingFiles\' | translate }}</h5>\n                <ul>\n                    <li ng-repeat=\"file in existingFiles\">\n\n                        {{ file.name }} ({{file.size | filesize}})\n                        <a class=\"btn-pointer\" delete-resource=\"file\" on-delete=\"data.updateExisting = true\" label=\"linkResource.name\">\n                            <i class=\"fa fa-trash-o\" tooltip=\"{{ \'file.label.delete\' | translate }}\"></i>\n                        </a>\n                    </li>\n                </ul>\n            </div>\n        </hateoas-list>\n\n<!--\n        <ul hateoas-list disable-pagination=\"true\" disable-messages=\"true\" resource=\"linkResource\" rel=\"{{linkRel}}\" as=\"existingFiles\" update=\"data.updateExisting\">\n            <li ng-repeat=\"file in existingFiles\">\n\n                {{ file.name }} ({{file.size | filesize}})\n                <a class=\"btn-pointer\" delete-resource=\"file\" on-delete=\"data.updateExisting = true\" label=\"resource.name\">\n                    <i class=\"fa fa-trash-o\" tooltip=\"{{ \'file.label.delete\' | translate }}\"></i>\n                </a>\n            </li>\n        </ul>\n-->\n            <div ng-if=\"files.length > 0\" class=\"new-files\">\n                <h5>{{ \'file.label.newFiles\' | translate }}</h5>\n\n                <ul>\n                    <li ng-repeat=\"file in files\">\n\n                        <span ng-class=\"{\'text-danger\' : getFileErrors(file) !== null}\">\n                            {{ file[uploadProperty].name }} ({{ file[uploadProperty].size}})\n                        </span>\n\n                <span ng-if=\"file.$newVersion\">\n                            &nbsp; <span tooltip=\"{{ \'file.label.newVersion\' | translate }}\" tooltip-append-to-body=\"true\" class=\"btn-help\"><i class=\"fa fa-asterisk\"></i></span> &nbsp;\n                        </span>\n\n                        <a title=\"remove\" class=\"btn-pointer\" ng-click=\"files.splice(files.indexOf(file), 1)\">\n                            <i class=\"fa fa-times\" tooltip=\"{{ \'file.label.delete\' | translate }}\"></i>\n                        </a>\n\n                        <div class=\"help-block\" ng-if=\"getFileErrors(file) !== null\">\n                            <ul>\n                                <li ng-repeat=\"message in getFileErrors(file).uploadedFile.errors\" translate=\"{{ message }}\" ></li>\n                            </ul>\n                        </div>\n\n                    </li>\n                </ul>\n\n            </div>\n\n        <span class=\"btn btn-default btn-file\">\n\n            {{ label | translate }} <input type=\"file\" accept=\"{{ mimeTypes }}\" />\n        </span>\n</div>");
-$templateCache.put("uebb_hateoas_templates/select-hateoas.html","<div class=\"chosen-container\"\n	 style=\"width:100%\"\n	 ng-class=\"{\'chosen-with-drop\': showDropdown, \'chosen-container-active\': active, \'chosen-container-single\': !multiple, \'chosen-container-multi\': !!multiple, \'chosen-disabled\':disabled}\">\n\n	<ul ng-show=\"multiple\" class=\"chosen-choices\">\n		<li ng-repeat=\"item in selected\" class=\"search-choice\">\n			<span ng-bind=\"{{label}}\"></span>\n			<a class=\"search-choice-close\" ng-click=\"remove(item)\"></a>\n		</li>\n		<li class=\"search-field\">\n			<input ng-show=\"active\"\n				   type=\"text\"\n				   ng-model=\"search\"\n				   class=\"default search\"\n				   autocomplete=\"off\"\n				   style=\"width: 125px;\"\n				   ng-change=\"page=1;showDropdown=true;query()\"\n				   ng-keydown=\"type($event)\" />\n			<input ng-hide=\"active || selected.length > 0\" type=\"text\" ng-disabled=\"disabled\" value=\"{{placeholder}}\" class=\"default\" />\n		</li>\n	</ul>\n\n\n	<a ng-show=\"!multiple\" class=\"chosen-single chosen-default\">\n		<span ng-if=\"selected.length == 0\">{{placeholder}}</span>\n		<span ng-if=\"selected.length\" ng-repeat=\"item in selected\" ng-bind=\"{{label}}\">\n		</span>\n\n		<i ng-if=\"selected.length\" ng-click=\"remove(selected[0])\" class=\"fa fa-times chosen-remove\" ng-hide=\"clearButton === false\"></i>\n\n		<div><b></b></div>\n	</a>\n\n	<div class=\"chosen-drop\">\n		<div ng-show=\"!multiple\" class=\"chosen-search\">\n			<input type=\"text\" class=\"default search\" autocomplete=\"off\" ng-model=\"search\" ng-change=\"page=1;query()\">\n		</div>\n		<div ng-if=\"!request || request.isPending()\" class=\"chosen-spinner\" style=\"padding:20px;text-align:center\">\n			<span class=\"fa fa-spinner fa-spin\"></span>\n		</div>\n		<div ng-if=\"request.isFulfilled()\">\n			<div ng-show=\"request.value().items.length == 0\" style=\"padding:20px;text-align:center\">\n				{{ \'general.list.empty\' | translate }}\n				<div ng-show=\"!!created && !!createFactory && search != \'\'\"><a ng-click=\"create()\">\"{{search}}\" {{ \'general.add\' | translate }}</a></div>\n			</div>\n			<ul class=\"chosen-results\">\n				<li ng-repeat=\"item in request.value().items\" ng-class=\"{\'active-result\': isNotSelected(item), \'result-selected\': !isNotSelected(item), \'highlighted\': item.selected}\" ng-bind=\"{{label}}\" ng-click=\"add(item)\"></li>\n				<li ng-show=\"displayCreate && request.value().items.length != 0\" class=\"active-result\">\n					<a ng-click=\"create()\">\"{{search}}\" {{ \'general.add\' | translate }}</a>\n				</li>\n			</ul>\n\n			<div class=\"select-pagination\" ng-show=\"request.value().pages > 1\">\n				<div class=\"pages\">\n					{{ \'general.page\' | translate }} <span>{{ page }}</span> {{ \'general.of\' | translate }} <span>{{ request.value().pages }}</span>\n				</div>\n				<div class=\"pagination\"> \n					<ul class=\"pagination\">\n						<li ng-class=\"{disabled: page <= 1}\" class=\"hateoas-select-prev\">\n							<a ng-click=\"changePage(page - 1);\">\n								&laquo;\n							</a>\n						</li>\n						<li ng-class=\"{disabled: page >= request.value().pages}\" class=\"hateoas-select-next\">\n							<a ng-click=\"changePage(page + 1);\">\n								&raquo;\n							</a>\n						</li>\n					</ul>\n				</div>\n			</div>\n\n		</div>\n		<div ng-if=\"request.isRejected()\" style=\"padding:20px;text-align:center\">\n			{{ \'general.list.error\' | translate }}\n		</div>\n\n	</div>\n</div>\n");}]);
-angular.module('uebb.hateoas', ['mwl.bluebird', 'uebb.hateoas.templates', 'pascalprecht.translate']);
+angular.module('uebb.hateoas', ['pascalprecht.translate']);
 
+/**
+ * Directive delete-resource
+ */
+angular.module('uebb.hateoas')
+    .directive('deleteResource', function() {
+        'use strict';
+        return {
+            scope: {
+                deleteResource: '=',
+                onDelete: '&',
+                onCancel: '&',
+                label: '@',
+                labelPrefix: '@'
+            },
+            restrict: 'A',
+            transclude: true,
+            template: '<span ng-transclude />',
+            link: function(scope, element, controller) {
+                element.on('click', function() {
+                    scope.openPopup();
+                });
+            },
+            controller: ["$scope", "deletePopup", function($scope, deletePopup) {
+                $scope.openPopup = function() {
+                    deletePopup({
+                        resource: $scope.deleteResource,
+                        onDelete: $scope.onDelete,
+                        onCancel: $scope.onCancel,
+                        label: $scope.label,
+                        labelPrefix: $scope.labelPrefix
+                    });
+                };
+            }]
+        };
+    })
+    .factory('deletePopup', ["$modal", "$rootScope", function($modal, $rootScope) {
+        'use strict';
+
+        return function (config) {
+            var scope = $rootScope.$new();
+
+            scope.resource = config.resource;
+            scope.label = config.label || 'resource';
+            scope.labelPrefix = config.labelPrefix || 'general';
+            scope.onDelete = config.onDelete;
+            scope.onCancel = config.onDeleted;
+
+
+            var modal = $modal.open({
+                templateUrl: 'uebb_hateoas_templates/delete-resource.html',
+                keyboard: false,
+                scope: scope,
+                backdrop: 'static'
+            });
+
+            scope.delete = function() {
+                scope.resource.delete()
+                    .then(function() {
+                        modal.close();
+                        if (scope.onDelete) {
+                            scope.onDelete();
+                        }
+                    }, function(response) {
+                        scope.error = response.data;
+                    });
+            };
+
+            return {
+                close: function () {
+                    modal.close();
+                }
+            };
+        };
+    }]);
+
+'use strict';
+
+angular.module('uebb.hateoas').filter( 'filesize', function () {
+    var units = [
+        'bytes',
+        'KB',
+        'MB',
+        'GB',
+        'TB',
+        'PB'
+    ];
+
+    return function( bytes, precision ) {
+        if ( isNaN( parseFloat( bytes )) || ! isFinite( bytes ) ) {
+            return '?';
+        }
+
+        var unit = 0;
+
+        while ( bytes >= 1024 ) {
+            bytes /= 1024;
+            unit ++;
+        }
+
+        return bytes.toFixed( + precision ) + ' ' + units[ unit ];
+    };
+});
 /**
  * Factory HateoasResource
  */
@@ -53358,14 +53882,14 @@ angular.module('uebb.hateoas').factory('HateoasResource',
     /**
      *
      * @param {@link $http} $http
-     * @param {@link $q} $q
+     * @param {@link Promise} Promise
      * @param {@link hateoasUtil} hateoasUtil
      * @param {@link hateoasCache} hateoasCache
      * @param {@link HateoasRequestError} HateoasRequestError
      *
      * @returns {@link HateoasResource}
      */
-        ["$http", "$q", "hateoasUtil", "hateoasCache", "HateoasRequestError", function ($http, $q, hateoasUtil, hateoasCache, HateoasRequestError) {
+        ["$http", "Promise", "hateoasUtil", "hateoasCache", "HateoasRequestError", function ($http, Promise, hateoasUtil, hateoasCache, HateoasRequestError) {
         'use strict';
 
 
@@ -53388,13 +53912,13 @@ angular.module('uebb.hateoas').factory('HateoasResource',
          * @instance
          *
          * @param {{}} data - The data in hal+json format
-         * @returns {$q}
+         * @returns {Promise}
          */
         HateoasResource.prototype.setData = function (data) {
             angular.copy(hateoasUtil.getProperties(data), this);
             this.$originalData = data;
             this.$links = hateoasUtil.getLinks(data);
-            return $q.resolve(this);
+            return Promise.resolve(this);
         };
 
         /**
@@ -53415,72 +53939,116 @@ angular.module('uebb.hateoas').factory('HateoasResource',
         };
 
         /**
-         * Get the resource out of a link
+         * Get the resources out of a link
          * @public
          * @instance
          *
          * @param {string} rel - The relation name to fetch
          * @param {{}} [params] - Additional GET params to append to the link url
          * @param {boolean} [ignoreCache=false] - Ignore the hateoas resource cache
-         * @returns {$q}
+         * @returns {Promise}
          */
-        HateoasResource.prototype.getLink = function (rel, params, ignoreCache) {
-            var href = this.getHref(rel);
-            if (angular.isArray(href)) {
-                return $q.all(href.map(function (href) {
+        HateoasResource.prototype.getLinks = function (rel, params, ignoreCache) {
+            var hrefs = this.getHrefs(rel);
+            if (hrefs.length) {
+                return Promise.all(hrefs.map(function (href) {
                     return HateoasResource.get(href, params, ignoreCache);
                 }));
-            }
-            else if (href) {
-                return HateoasResource.get(href, params, ignoreCache);
-            }
-            else {
-                return $q.reject(new Error('Link not found: ' + rel));
+            } else {
+                return Promise.reject('Link not found ' + rel);
             }
         };
 
         /**
-         * Set a link to a resource in memory. The changes are saved after a .save() call
+         * Get the first resource out of a link
+         * @public
+         * @instance
+         *
+         * @param {string} rel - The relation name to fetch
+         * @param {{}} [params] - Additional GET params to append to the link url
+         * @param {boolean} [ignoreCache=false] - Ignore the hateoas resource cache
+         * @returns {Promise}
+         */
+        HateoasResource.prototype.getLink = function (rel, params, ignoreCache) {
+            var href = this.getHref(rel, params);
+            if (href) {
+                return HateoasResource.get(href, params, ignoreCache);
+            } else {
+                return Promise.reject('Link not found ' + rel);
+            }
+        };
+
+        /**
+         * Set a link to a resource in memory overwriting existing links of the given relation. The changes are saved after a .save() call
          * @public
          * @instance
          *
          * @param {string} rel - The relation name of the link
          * @param {HateoasResource} resource - The resource to link
-         * @param {boolean} [unique=false] - Set the link as singular link instead of a collection
          * @returns void
          */
         HateoasResource.prototype.setLink = function (rel, resource, unique) {
-            this.setHref(rel, resource.getHref('self'), unique);
+            this.setHref(rel, resource.getHref('self'));
         };
 
         /**
-         * Get the href(s) of a link
+         * Add a link to a resource in memory. The changes are saved after a .save() call
+         * @public
+         * @instance
+         *
+         * @param {string} rel - The relation name of the link
+         * @param {HateoasResource} resource - The resource to link
+         */
+        HateoasResource.prototype.addLink = function (rel, resource) {
+            this.addHref(rel, resource.getHref('self'));
+        };
+
+        /**
+         * Get the hrefs of a link
          * @public
          * @instance
          *
          * @param {string} rel - The relation name
          * @param {{}} [params] - Additional GET params to add to the resulting URL
-         * @returns {{}|array} - The href or an array of hrefs
+         * @returns {array} - The array of hrefs
          */
-        HateoasResource.prototype.getHref = function (rel, params) {
-            var parts = rel.split('/');
-            rel = parts.shift();
-            var additional = parts.join('/');
-
+        HateoasResource.prototype.getHrefs = function (rel, params) {
             if (params) {
                 params = hateoasUtil.flatten(params);
             }
 
+            var links = [];
+
             if (angular.isArray(this.$links[rel])) {
-                return this.$links[rel].map(function (link) {
-                    return hateoasUtil.addParamsToUrl(hateoasUtil.mergeLink(link.href, additional), params);
-                });
+                links.push.apply(links, this.$links[rel]);
+            } else if (this.$links[rel]) {
+                links.push(this.$links[rel]);
             }
-            else if (this.$links[rel]) {
-                return hateoasUtil.addParamsToUrl(hateoasUtil.mergeLink(this.$links[rel].href, additional), params);
+
+            return links.map(function (link) {
+                return hateoasUtil.expandUriTemplate(decodeURI(link.href), params);
+            });
+
+        };
+
+        /**
+         * Get the first href of a link
+         * @public
+         * @instance
+         *
+         * @param {string} rel - The relation name
+         * @param {{}} [params] - Additional GET params to add to the resulting URL
+         * @returns {string} - The href
+         */
+        HateoasResource.prototype.getHref = function (rel, params) {
+            var link = null;
+            if (angular.isArray(this.$links[rel]) && this.$links[rel].length) {
+                link = this.$links[rel][0];
+            } else if (this.$links[rel]) {
+                link = this.$links[rel];
             }
-            else {
-                return null;
+            if (link) {
+                return hateoasUtil.expandUriTemplate(decodeURI(link.href), params);
             }
         };
 
@@ -53489,12 +54057,12 @@ angular.module('uebb.hateoas').factory('HateoasResource',
          * @public
          * @instance
          *
-         * @returns {$q}
+         * @returns {Promise}
          */
         HateoasResource.prototype.delete = function () {
             var url = this.getHref('self');
 
-            return $q.resolve(
+            return Promise.resolve(
                 $http({method: 'DELETE', url: url, headers: headers, withCredentials: true})
             ).then(function (response) {
                     hateoasCache.invalidateRelated(this);
@@ -53636,28 +54204,32 @@ angular.module('uebb.hateoas').factory('HateoasResource',
         };
 
         /**
-         * Set a link to an URI locally
+         * Set a link to an URI locally. Overwrites existing links of this rel
          * @instance
          *
          * @param {string} rel - The relation name
          * @param {string} href - The target URI
-         * @param {boolean} [unique=false] - Set the link as singular instead of multiple even if there were previous links
          * @returns {void}
          */
-        HateoasResource.prototype.setHref = function (rel, href, unique) {
-            if (unique) {
-                this.$links[rel] = {href: href};
-            }
-            else {
-                if (!angular.isArray(this.$links[rel])) {
-                    var links = [];
-                    if (this.$links[rel]) {
-                        links.push(this.$links[rel]);
-                    }
-                    this.$links[rel] = links;
+        HateoasResource.prototype.setHref = function (rel, href) {
+            this.$links[rel] = {href: href};
+        };
+
+        /**
+         * Add a link to an URI locally while keeping existing links.
+         *
+         * @param rel
+         * @param href
+         */
+        HateoasResource.prototype.addHref = function (rel, href) {
+            if (!angular.isArray(this.$links[rel])) {
+                var links = [];
+                if (this.$links[rel]) {
+                    links.push(this.$links[rel]);
                 }
-                this.$links[rel].push({href: href});
+                this.$links[rel] = links;
             }
+            this.$links[rel].push({href: href});
         };
 
         /**
@@ -53666,7 +54238,7 @@ angular.module('uebb.hateoas').factory('HateoasResource',
          * @instance
          *
          * @param {string} url - The url to post the resource to
-         * @returns {$q}
+         * @returns {Promise}
          */
         HateoasResource.prototype.post = function (url) {
             var data = this.getData();
@@ -53688,12 +54260,18 @@ angular.module('uebb.hateoas').factory('HateoasResource',
                 };
             }
 
-            return $q.resolve($http(conf))
+            return Promise.resolve($http(conf))
                 .then(function (response) {
                     if (response.status === 201) {
-                        this.setHref('self', response.headers('Location'), true);
-                        this.id = this.getHref('self').split('/').pop();
+                        if (angular.isArray(response.data)) {
+                            this.applyPatch(response.data);
+                        } else {
+                            // Hack self link and id from Location header
+                            this.setHref('self', response.headers('Location'), true);
+                            this.id = this.getHref('self').split('/').pop();
+                        }
                         this.$originalData = this.getData();
+                        console.log(this.$originalData);
                     }
                     return this;
 
@@ -53707,92 +54285,15 @@ angular.module('uebb.hateoas').factory('HateoasResource',
          *
          * @returns {Array}
          */
-        HateoasResource.prototype.getChanges = function () {
-            var oldData = hateoasUtil.removeVirtualLinks(hateoasUtil.getNormalizedData(this.$originalData));
-            var newData = hateoasUtil.removeVirtualLinks(this.getData());
+        HateoasResource.prototype.getPatch = function () {
+            var oldData = hateoasUtil.getNormalizedData(this.$originalData);
+            var newData = this.getData();
 
-            var oldLinks = oldData[hateoasUtil.linksProperty];
-            var newLinks = newData[hateoasUtil.linksProperty];
-
-            var arrayUnique = function (a) {
-                return a.reduce(function (p, c) {
-                    if (p.indexOf(c) < 0) {
-                        p.push(c);
-                    }
-                    return p;
-                }, []);
-            };
-
-            var props = arrayUnique([].concat(Object.keys(oldData), Object.keys(newData)));
-            props.splice(props.indexOf(hateoasUtil.linksProperty), 1);
-
-            var patch = [];
-
-            angular.forEach(props, function (property) {
-                if (JSON.stringify(oldData[property]) !== JSON.stringify(newData[property])) {
-                    patch.push({op: 'replace', path: '/' + property, value: newData[property]});
-                }
-            });
-
-            var rels = arrayUnique([].concat(Object.keys(oldData[hateoasUtil.linksProperty]), Object.keys(newData[hateoasUtil.linksProperty])));
-
-            angular.forEach(rels, function (rel) {
-                var currentOldLinks = [], currentNewLinks = [];
-
-                if (angular.isArray(oldLinks[rel])) {
-                    currentOldLinks = oldLinks[rel];
-                }
-                else {
-                    if (oldLinks[rel]) {
-                        currentOldLinks.push(oldLinks[rel]);
-                    }
-                }
-                if (angular.isArray(newLinks[rel])) {
-                    currentNewLinks = newLinks[rel];
-                }
-                else {
-                    if (newLinks[rel]) {
-                        currentNewLinks.push(newLinks[rel]);
-                    }
-                }
-
-                var removed = [];
-                angular.forEach(currentOldLinks, function (oldLink) {
-                    var isInNew = false;
-                    angular.forEach(currentNewLinks, function (newLink) {
-                        if (oldLink.href === newLink.href) {
-                            isInNew = true;
-                        }
-                    });
-                    if (!isInNew) {
-                        removed.push(oldLink);
-                    }
-                });
-                if (removed.length) {
-                    patch.push({op: 'remove', path: '/' + hateoasUtil.linksProperty + '/' + rel, value: removed});
-                }
-
-                var added = [];
-
-                angular.forEach(currentNewLinks, function (newLink) {
-                    var isInOld = false;
-                    angular.forEach(currentOldLinks, function (oldLink) {
-                        if (oldLink.href === newLink.href) {
-                            isInOld = true;
-                        }
-                    });
-                    if (!isInOld) {
-                        added.push(newLink);
-                    }
-                });
-                if (added.length) {
-                    patch.push({op: 'add', path: '/' + hateoasUtil.linksProperty + '/' + rel, value: added});
-                }
-
-            });
-
-            return patch;
+            return hateoasUtil.getPatch(oldData, newData);
         };
+
+
+
 
         /**
          * Reset all local changes
@@ -53818,7 +54319,7 @@ angular.module('uebb.hateoas').factory('HateoasResource',
          *
          * @param {array} changes - The changes in JSON-Patch format
          */
-        HateoasResource.prototype.applyChanges = function (changes) {
+        HateoasResource.prototype.applyPatch = function (changes) {
             angular.forEach(changes, function (action) {
                 var pathParts = action.path.split('/');
                 pathParts.shift();
@@ -53863,7 +54364,7 @@ angular.module('uebb.hateoas').factory('HateoasResource',
          * @public
          * @instance
          *
-         * @returns {$q}
+         * @returns {Promise}
          */
         HateoasResource.prototype.reload = function () {
             return HateoasResource.get(this.getHref('self'), null, true);
@@ -53877,7 +54378,7 @@ angular.module('uebb.hateoas').factory('HateoasResource',
          *
          * @param {string} url - The url to save the resource to if it is new
          * @param {boolean} [touch=false] - Send an empty patch if there are no local changes
-         * @returns {$q}
+         * @returns {Promise}
          */
         HateoasResource.prototype.save = function (url, touch) {
             var promise;
@@ -53905,17 +54406,17 @@ angular.module('uebb.hateoas').factory('HateoasResource',
          * @instance
          *
          * @param {boolean} [touch=false] - Send an empty patch if there are no local changes
-         * @returns {$q}
+         * @returns {Promise}
          */
         HateoasResource.prototype.patch = function (touch) {
             var url = this.getHref('self'),
-                patch = this.getChanges();
+                patch = this.getPatch();
 
             if (patch.length === 0 && !touch) {
-                return $q.resolve(this);
+                return Promise.resolve(this);
             }
 
-            return $q.resolve($http({
+            return Promise.resolve($http({
                 method: 'PATCH',
                 url: url,
                 headers: headers,
@@ -53937,8 +54438,7 @@ angular.module('uebb.hateoas').factory('HateoasResource',
         HateoasResource.setContentType = function (contentType, ctor) {
             hateoasCache.setContentType(contentType, ctor);
         };
-
-        hateoasCache.setContentType('application/vnd.uebb.resource+json', HateoasResource);
+        
         hateoasCache.setDefaultCtor(HateoasResource);
 
         /**
@@ -53948,24 +54448,24 @@ angular.module('uebb.hateoas').factory('HateoasResource',
          * @param {string} url - The URI to fetch
          * @param {{}} [params] - Additional GET params to append to the url
          * @param {boolean} [ignoreCache=false] - Ignore locally cached resources
-         * @returns {$q}
+         * @returns {Promise}
          */
         HateoasResource.get = function (url, params, ignoreCache) {
             url = hateoasUtil.addParamsToUrl(url, params);
 
-            var cached$q = hateoasCache.getCached$q(url);
-            // Return cached$q only if it is not rejected and only if it is pending if ignoreCache is set
-            if (cached$q && !cached$q.isRejected() && !(ignoreCache && cached$q.isResolved())) {
-                return cached$q;
+            var cachedPromise = hateoasCache.getCachedPromise(url);
+            // Return cachedPromise only if it is not rejected and only if it is pending if ignoreCache is set
+            if (cachedPromise && !cachedPromise.isRejected() && !(ignoreCache && cachedPromise.isResolved())) {
+                return cachedPromise;
             }
 
             if (!ignoreCache) {
                 if (hateoasCache.hasValidCache(url)) {
-                    return $q.resolve(hateoasCache.getCached(url));
+                    return Promise.resolve(hateoasCache.getCached(url));
                 }
             }
 
-            var canceler = $q.defer();
+            var canceler = Promise.defer();
 
             var request = $http({
                 method: 'GET',
@@ -53975,11 +54475,11 @@ angular.module('uebb.hateoas').factory('HateoasResource',
                 withCredentials: true
             });
 
-            var promise = $q.resolve(request)
+            var promise = Promise.resolve(request)
                 .cancellable()
-                .catch($q.CancellationError, function (e) {
+                .catch(Promise.CancellationError, function (e) {
                     canceler.resolve();
-                    return $q.reject(e);
+                    return Promise.reject(e);
                 })
                 .then(function (response) {
                     return hateoasCache.addToCache(response.data, response.headers);
@@ -54010,7 +54510,7 @@ angular.module('uebb.hateoas').factory('HateoasResource',
         };
 
         /**
-         * Set a default header for vall hateoas requests
+         * Set a default header for all hateoas requests
          * @static
          *
          * @param {string} key - The header name
@@ -54125,7 +54625,7 @@ angular.module('uebb.hateoas').factory('hateoasCache',
          * @param {string} href -  The url
          * @returns {$q}
          */
-        function getCached$q(href) {
+        function getCachedPromise(href) {
             href = hateoasUtil.normalizeUrl(href);
             if (cache.hasOwnProperty(href) && cache[href].promise instanceof  $q && !cache[href].promise.isRejected() && !cache[href].invalid) {
                 return cache[href].promise;
@@ -54282,6 +54782,7 @@ angular.module('uebb.hateoas').factory('hateoasCache',
          * @returns {HateoasResource}
          */
         function getCtor(contentType) {
+
             if (!contentTypeCtorMap[contentType]) {
                 for (var pattern in contentTypeCtorMap) {
                     if (contentTypeCtorMap.hasOwnProperty(pattern)) {
@@ -54317,11 +54818,11 @@ angular.module('uebb.hateoas').factory('hateoasCache',
 
                         if (cachedResource) {
                             setCached(url, cachedResource, headers, null);
-                            var localChanges = cachedResource.getChanges();
+                            var localChanges = cachedResource.getPatch();
 
                             return cachedResource.setData(resource.getData())
                                 .then(function() {
-                                    cachedResource.applyChanges(localChanges);
+                                    cachedResource.applyPatch(localChanges);
                                     return cachedResource;
                                 });
                         }
@@ -54439,7 +54940,7 @@ angular.module('uebb.hateoas').factory('hateoasCache',
             addToCache: addToCache,
             getCached: getCached,
             getCachedHeader: getCachedHeader,
-            getCached$q: getCached$q,
+            getCachedPromise: getCachedPromise,
             invalidateCache: invalidateCache,
             invalidateMatching: invalidateMatching,
             invalidateRelated: invalidateRelated,
@@ -54455,128 +54956,6 @@ angular.module('uebb.hateoas').factory('hateoasCache',
 
     }]
 );
-
-'use strict';
-
-angular.module('uebb.hateoas').factory('HateoasCollection',
-/**
- * @param {@link HateoasResource} HateoasResource
- * @returns {@link HateoasCollection}
- */
-["HateoasResource", function(HateoasResource) {
-
-	/**
-	 *
-	 * @class
-     * @extends HateoasResource
-	 */
-    function HateoasCollection() {
-        HateoasResource.apply(this, arguments);
-        this.items = [];
-    }
-
-    HateoasCollection.prototype = Object.create(HateoasResource.prototype);
-
-    /**
-     * Get all items of the collection asynchronously
-     * @returns {$q}
-     */
-    HateoasCollection.prototype.getItems = function () {
-        return this.getLink('items')
-            .then(function (items) {
-                this.items = items;
-                return this.items;
-            }.bind(this));
-    };
-
-    /**
-     * Set the data
-     *
-     * @param {{}} data - The data in hal+json format
-     * @returns {$q}
-     */
-    HateoasCollection.prototype.setData = function (data) {
-        return HateoasResource.prototype.setData.call(this, data)
-            .then(function () {
-                return this.getItems();
-            }.bind(this))
-            .then(function (items) {
-                return this;
-            }.bind(this));
-    };
-
-    /**
-     * A collection only has links, no regular properties
-     * @returns {{}}
-     */
-    HateoasCollection.prototype.getData = function () {
-        var data = HateoasResource.prototype.getData.call(this);
-        delete(data.items);
-        return data;
-    };
-
-
-    /**
-     * Override the save function to disallow save
-     *
-     * @type {Function}
-     */
-    HateoasCollection.prototype.post = HateoasCollection.prototype.patch = function () {
-        throw 'Collections cannot be saved';
-    };
-
-
-    /**
-     * Fetch another page of the collection
-     *
-     * @param {integer} page - The page to fetch
-     * @param {integer} limit - The maximum items per page
-     * @returns {$q}
-     */
-    HateoasCollection.prototype.fetchPage = function (page, limit) {
-        var url = new URI(this.getHref('self'))
-            .removeSearch('page')
-            .removeSearch('limit')
-            .addSearch('page', page)
-            .addSearch('limit', limit === undefined ? this.limit : limit)
-            .build();
-
-        return HateoasResource.get(url);
-    };
-
-    /**
-     * Fetch the next page
-     *
-     * @returns {$q}
-     */
-    HateoasCollection.prototype.nextPage = function () {
-        return HateoasResource.get(this.getHref('next'));
-    };
-
-    /**
-     * Fetch the previous page
-     *
-     * @returns {$q}
-     */
-    HateoasCollection.prototype.previousPage = function () {
-        return HateoasResource.get(this.getHref('previous') || this.getHref('prev'));
-    };
-
-    /**
-     * Query the collection
-     *
-     * @param {{}} params - The query params
-     * @returns {$q}
-     */
-    HateoasCollection.prototype.query = function (params) {
-        params = params || {};
-        params.page = params.page || 1;
-        return HateoasResource.get(this.getHref('self'), params);
-    };
-
-    return HateoasCollection;
-
-}]);
 
 'use strict';
 
@@ -54616,7 +54995,7 @@ angular.module('uebb.hateoas').factory('HateoasRequestError',
 "use strict";
 
 angular.module('uebb.hateoas')
-    .directive('hateoasLink', ["$q", "$timeout", "HateoasResource", function($q, $timeout, HateoasResource) {
+    .directive('hateoasLink', ["Promise", "$timeout", "HateoasResource", function(Promise, $timeout, HateoasResource) {
 
         return {
             restrict: 'AEC',
@@ -54627,6 +55006,7 @@ angular.module('uebb.hateoas')
                 resource: '=',
                 rel: '@',
                 as: '@',
+                params: '&',
                 labelPrefix: '@',
                 disableSpinner: '=?',
                 update: '=?',
@@ -54650,7 +55030,7 @@ angular.module('uebb.hateoas')
 
 
                 function fetch(currentValue, oldValue) {
-                    $q.resolve($scope.resource)
+                    Promise.resolve($scope.resource)
                         .then(function(resource) {
                             if (resource instanceof HateoasResource) {
                                 if (!$scope.update && (lastResource === resource && lastRel === $scope.rel)) {
@@ -54670,14 +55050,11 @@ angular.module('uebb.hateoas')
                                     $scope.promise.cancel();
                                 }
 
-
-
-                                $scope.promise = resource.getLink($scope.rel, null, ignoreCache)
+                                $scope.promise = resource.getLink($scope.rel, $scope.params(), ignoreCache)
                                     .then(function(result) {
                                         var args = {};
                                         $scope.transcludeScope[$scope.as || $scope.rel] = args[$scope.as || $scope.rel] = result;
                                         $scope.onLoad(args);
-
                                     }, function(error) {
                                         $scope.transcludeScope.error = error;
                                     })
@@ -54729,11 +55106,9 @@ angular.module('uebb.hateoas').directive('hateoasList', function() {
 			limit: '@',
 			bare: '=?',
 			order: '@',
-			where: '=?',
-			filter: '=?',
+			where: '@',
 			page: '@',
-			search: '=?',
-			autoUpdate: '=?',
+			search: '@',
 			update: '=?',
 			orderFields: '=?',
 			orderField: '@',
@@ -54764,23 +55139,22 @@ angular.module('uebb.hateoas').directive('hateoasList', function() {
 
 			});
 		},
-		controller: ["$scope", "$timeout", "HateoasResource", "$q", function($scope, $timeout, HateoasResource, $q) {
+		controller: ["$scope", "$timeout", "HateoasResource", "Promise", function($scope, $timeout, HateoasResource, Promise) {
 
 			$scope.page = $scope.page || 1;
 
-			var request = null;
+            var lastParamsString;
 
-            var lastParamsString = '';
-			var fetch = function() {
+			function fetch() {
+
 				if($scope.if !== false) {
 					$scope.transcludeScope.error = null;
 					var invalidate = $scope.update || !!$scope.ignoreCache();
                     var update = $scope.update;
 
-					$scope.update = false;
+                    $scope.update = false;
 
-
-					$q.resolve($scope.resource)
+					Promise.resolve($scope.resource)
 						.then(function(resource) {
 							if(resource instanceof HateoasResource) {
 
@@ -54807,54 +55181,44 @@ angular.module('uebb.hateoas').directive('hateoasList', function() {
                                     limit:  $scope.limit,
                                     order: order.join(','),
                                     where: $scope.where || '',
-                                    filter: $scope.filter ,
                                     page:  $scope.page
                                 };
 
+                                // Make sure we don't trigger the same request many times because of the multiple watchers
                                 var newParamsString = JSON.stringify(params);
-                                if (newParamsString === lastParamsString && request && !update) {
+                                if (newParamsString === lastParamsString && !update && $scope.promise && $scope.promise.isPending()) {
                                     return;
                                 }
                                 lastParamsString = newParamsString;
-
-                                if(request) {
-                                    $timeout.cancel(request);
-                                }
 
                                 if($scope.promise && $scope.promise.isPending()) {
                                     $scope.promise.cancel();
                                 }
 
-								request = $timeout(function() {
-									$scope.transcludeScope.error = null;
+                                $scope.transcludeScope.error = null;
 
-									$scope.promise = resource.getLink($scope.rel, params, invalidate).then(function(result) {
-											var args = {}
+                                var args = {}
 
-											if($scope.resourceAs) {
-												$scope.transcludeScope[$scope.resourceAs] = args[$scope.resourceAs] = result;
-											}
-
-
-											args[$scope.as || $scope.rel] = result.items;
-
-											$scope.pages = result.pages;
-											//$scope.limit = '' + result.limit;
-											$scope.page = '' + result.page;
-											$scope.result = result;
-
-											$scope.onLoad(args);
-
-										}.bind(this),
-											function(error) {
-												$scope.transcludeScope.error = error;
-											}.bind(this));
-								}.bind(this), 50);
-
+                                $scope.promise = resource.getLink($scope.rel, params, invalidate)
+                                    .then(function(result) {
+                                        if($scope.resourceAs) {
+                                            $scope.transcludeScope[$scope.resourceAs] = args[$scope.resourceAs] = result;
+                                        }
+                                        $scope.pages = result.pages;
+                                        $scope.page = '' + result.page;
+                                        $scope.result = result;
+                                        return result.getLinks('items');
+                                    })
+                                    .then(function(items) {
+                                        $scope.transcludeScope[$scope.as || $scope.rel] = args[$scope.as || $scope.rel] = items;
+                                        $scope.onLoad(args);
+                                    }, function(error) {
+                                        $scope.transcludeScope.error = error;
+                                    });
 							}
-						}.bind(this));
+						});
 				}
-			}.bind(this);
+			}
 
             $scope.$watch('if', fetch);
             $scope.$watch('page', fetch);
@@ -54863,10 +55227,6 @@ angular.module('uebb.hateoas').directive('hateoasList', function() {
             $scope.$watch('orderField', fetch);
             $scope.$watch('orderDirection', fetch);
             $scope.$watch('resource', fetch);
-
-            $scope.$watch('result.items', function(items) {
-                $scope.transcludeScope[$scope.as || $scope.rel] = items;
-            }.bind(this), true);
 
             $scope.$watch('labelPrefix', function() {
                 $scope.labelPrefix = ((!$scope.labelPrefix || $scope.labelPrefix === '') ? 'general.list' : $scope.labelPrefix);
@@ -54892,7 +55252,6 @@ angular.module('uebb.hateoas').directive('hateoasList', function() {
                     fetch();
                 }
             });
-
 
 		}]
 	};
@@ -54997,10 +55356,9 @@ angular.module('uebb.hateoas').directive('hateoasSelectList', function() {
  */
 angular.module('uebb.hateoas').factory('hateoasUtil',
     /**
-     * @param {@link $q} $q
      * @returns {@link hateoasUtil}
      */
-    ["$q", function($q) {
+    function() {
         /* global File */
         /* global FormData */
 
@@ -55062,7 +55420,7 @@ angular.module('uebb.hateoas').factory('hateoasUtil',
                     }
                     else if (Array.isArray(cur)) {
                         for (i = 0, l = cur.length; i < l; i++) {
-                            recurse(cur[i], prop ? prop + "[]" : "" + i);
+                            recurse(cur[i], prop ? prop + '[' + i + ']' : '' + i);
                         }
                         if (l === 0) {
                             result[prop] = [];
@@ -55105,6 +55463,18 @@ angular.module('uebb.hateoas').factory('hateoasUtil',
                 }
                 return url;
             },
+            expandUriTemplate: function(url, params) {
+                if (params) {
+                    params = hateoasUtil.flatten(params);
+                    var url = URI.expand(url, function(key) {
+                        var value = params[key];
+                        delete(params[key]);
+                        return value;
+                    }).toString();
+                    return this.addParamsToUrl(url);
+                }
+                return url;
+            },
             /**
              * Creates a FormData object from a hashmap
              *
@@ -55112,7 +55482,6 @@ angular.module('uebb.hateoas').factory('hateoasUtil',
              * @returns {FormData}
              */
             convertJsonToFormData: function convertJsonToFormData(data) {
-
                 var formData = new FormData();
                 data = hateoasUtil.flatten(data);
                 Object.keys(data).forEach(function (key) {
@@ -55241,44 +55610,6 @@ angular.module('uebb.hateoas').factory('hateoasUtil',
                 return normalized;
             },
             /**
-             * Virtual links don't end with an (integer) id
-             * @param {{string}} link The url
-             * @returns {boolean}
-             */
-            isVirtual: function isVirtual(link) {
-                return isNaN(parseInt(link.href.split('/').pop(), 10));
-            },
-            /**
-             * Non virtual links end with an (integer) id
-             * @param {{string}} link The url
-             * @returns {boolean}
-             */
-            isNotVirtual: function isNotVirtual(link) {
-                return !hateoasUtil.isVirtual(link);
-            },
-            /**
-             * Removes all non-virtual links from a json-hal style data object
-             *
-             * @param {{}} data - The source data
-             * @returns {{}} - The filtered data
-             */
-            removeVirtualLinks: function removeVirtualLinks(data) {
-
-                Object.keys(data[hateoasUtil.linksProperty]).forEach(function (rel) {
-                    var links = data[hateoasUtil.linksProperty][rel];
-                    if (angular.isArray(links)) {
-                        data[hateoasUtil.linksProperty][rel] = links.filter(hateoasUtil.isNotVirtual);
-                    }
-                    else {
-                        if (data[hateoasUtil.linksProperty][rel] && hateoasUtil.isVirtual(data[hateoasUtil.linksProperty][rel])) {
-                            delete(data[hateoasUtil.linksProperty][rel]);
-                        }
-                    }
-                });
-
-                return data;
-            },
-            /**
              * Adds an additional path portion to a link if given
              * @param {{string}} link - The url
              * @param {{string}} additional - The additional path portion
@@ -55292,14 +55623,106 @@ angular.module('uebb.hateoas').factory('hateoasUtil',
                 else {
                     return link;
                 }
+            },
+
+            getPatch: function(oldData, newData) {
+                var oldLinks = oldData[hateoasUtil.linksProperty];
+                var newLinks = newData[hateoasUtil.linksProperty];
+
+                var arrayUnique = function (a) {
+                    return a.reduce(function (p, c) {
+                        if (p.indexOf(c) < 0) {
+                            p.push(c);
+                        }
+                        return p;
+                    }, []);
+                };
+
+                var props = arrayUnique([].concat(Object.keys(oldData), Object.keys(newData)));
+                props.splice(props.indexOf(hateoasUtil.linksProperty), 1);
+
+                var patch = [];
+
+                angular.forEach(props, function (property) {
+                    if (JSON.stringify(oldData[property]) !== JSON.stringify(newData[property])) {
+                        patch.push({op: 'replace', path: '/' + property, value: newData[property]});
+                    }
+                });
+
+                var rels = arrayUnique([].concat(Object.keys(oldData[hateoasUtil.linksProperty]), Object.keys(newData[hateoasUtil.linksProperty])));
+
+                angular.forEach(rels, function (rel) {
+                    var currentOldLinks = [], currentNewLinks = [];
+
+                    if (angular.isArray(oldLinks[rel])) {
+                        currentOldLinks = oldLinks[rel];
+                    }
+                    else {
+                        if (oldLinks[rel]) {
+                            currentOldLinks.push(oldLinks[rel]);
+                        }
+                    }
+                    if (angular.isArray(newLinks[rel])) {
+                        currentNewLinks = newLinks[rel];
+                    }
+                    else {
+                        if (newLinks[rel]) {
+                            currentNewLinks.push(newLinks[rel]);
+                        }
+                    }
+
+                    var removed = [];
+                    angular.forEach(currentOldLinks, function (oldLink) {
+                        var isInNew = false;
+                        angular.forEach(currentNewLinks, function (newLink) {
+                            if (oldLink.href === newLink.href) {
+                                isInNew = true;
+                            }
+                        });
+                        if (!isInNew) {
+                            removed.push(oldLink);
+                        }
+                    });
+                    if (removed.length) {
+                        patch.push({op: 'remove', path: '/' + hateoasUtil.linksProperty + '/' + rel, value: removed});
+                    }
+
+                    var added = [];
+
+                    angular.forEach(currentNewLinks, function (newLink) {
+                        var isInOld = false;
+                        angular.forEach(currentOldLinks, function (oldLink) {
+                            if (oldLink.href === newLink.href) {
+                                isInOld = true;
+                            }
+                        });
+                        if (!isInOld) {
+                            added.push(newLink);
+                        }
+                    });
+                    if (added.length) {
+                        patch.push({op: 'add', path: '/' + hateoasUtil.linksProperty + '/' + rel, value: added});
+                    }
+
+                });
+
+                return patch;
             }
-
-
         };
 
         return hateoasUtil;
-    }]
+    }
 );
+
+"use strict";
+
+angular.module('uebb.hateoas')
+    .factory('Promise', ["$rootScope", function($rootScope) {
+        window.Promise.setScheduler(function (cb) {
+            $rootScope.$evalAsync(cb);
+        });
+        return window.Promise;
+    }]);
 
 "use strict";
 
@@ -55311,7 +55734,7 @@ angular.module('uebb.hateoas')
             scope: {
                 linkRel: '@',
                 linkResource: '=?',
-                resource: '=',
+                resource: '&',
                 uploadProperty: '=?',
                 multiple: '=?',
                 files: '=?',
@@ -55328,8 +55751,6 @@ angular.module('uebb.hateoas')
                 scope.data = {updateExisting: false};
                 scope.uploadProperty = scope.uploadProperty || 'upload';
                 scope.files = scope.files || [];
-
-
                     element.find('input[type=file]').on('change', function(changeEvent) {
                     $timeout(function() {
                         var resource;
@@ -55337,7 +55758,7 @@ angular.module('uebb.hateoas')
                             /**
                              * @type {HateoasResource}
                              */
-                            resource = scope.resource || new HateoasResource();
+                            resource = scope.resource() || new HateoasResource();
                             resource[scope.uploadProperty || 'upload'] = changeEvent.target.files.item(i);
                             if(scope.linkResource && scope.linkRel && !resource.hasLink(scope.linkRel, scope.linkResource)) {
                                 resource.setLink(scope.linkRel, scope.linkResource);
@@ -55482,7 +55903,7 @@ angular.module('uebb.hateoas').directive('selectHateoas', ["$timeout", function(
 				return true;
 			}
 		},
-		controller: ["$scope", "HateoasResource", "HateoasCollection", "$timeout", "$q", function($scope, HateoasResource, HateoasCollection, $timeout, $q) {
+		controller: ["$scope", "HateoasResource", "HateoasCollection", "$timeout", "Promise", function($scope, HateoasResource, HateoasCollection, $timeout, Promise) {
 			$scope.add = function(item) {
 				if($scope.multiple) {
 					if($scope.multiple !== true && $scope.selected.length >= $scope.multiple) {
@@ -55532,7 +55953,7 @@ angular.module('uebb.hateoas').directive('selectHateoas', ["$timeout", function(
 
 			$scope.existing = [];
 			$scope.$watch('resource', function() {
-				$q.resolve($scope.resource)
+				Promise.resolve($scope.resource)
 					.then(function(resource) {
 						if(resource instanceof HateoasResource) {
 
@@ -55676,7 +56097,7 @@ angular.module('uebb.hateoas').directive('selectHateoas', ["$timeout", function(
 			};
 
 			$scope.create = function() {
-				$q.resolve($scope.createFactory({search: $scope.search})).then(function(newItem) {
+				Promise.resolve($scope.createFactory({search: $scope.search})).then(function(newItem) {
 					$scope.created.push(newItem);
 					$scope.selected.push(newItem);
 					$scope.search = '';
@@ -55700,7 +56121,7 @@ angular.module('uebb.hateoas').directive('selectHateoas', ["$timeout", function(
 			});
 
 			$scope.$watch('srcResource', function(srcResource) {
-				$q.resolve(srcResource)
+				Promise.resolve(srcResource)
 					.then(function(srcResource) {
 						if(srcResource instanceof HateoasResource && $scope.srcRel) {
 							$scope.url = srcResource.getHref($scope.srcRel);
@@ -55821,4 +56242,10 @@ angular.module('uebb.hateoas').directive('selectHateoas', ["$timeout", function(
 		}]
 	};
 }]);
+angular.module("uebb.hateoas").run(["$templateCache", function($templateCache) {$templateCache.put("uebb_hateoas_templates/delete-resource.html","<div class=\"modal-header\">\n    <h3 class=\"modal-title\">{{ labelPrefix + \'.delete.header\' | translate }}</h3>\n</div>\n\n<div class=\"modal-body\">\n\n    <p>\n        {{ labelPrefix + \'.delete.description\' | translate }}\n    </p>\n    <p>\n        <span ng-bind=\"{{ label }}\"></span>\n    </p>\n\n    <span ng-repeat=\"fieldErrors in errors\">\n        <span class=\"help-block\" ng-repeat=\"message in fieldErrors\">{{ message | translate}}</span>\n    </span>\n</div>\n<div class=\"modal-footer\">\n\n    <button class=\"btn btn-primary\" ng-disabled=\"request.isPending()\" ng-click=\"delete()\" >\n        <i class=\"fa\" ng-class=\"{\'fa-spinner fa-spin\': request.isPending(), \'fa-trash-o\': !request.isPending()}\"></i>\n        {{ labelPrefix + \'.delete.ok\' | translate }}\n    </button>\n\n    <button class=\"btn btn-cancel\" ng-disabled=\"request.isPending()\" ng-click=\"$close(); onCancel()\">\n        <i class=\"fa fa-times\"></i>\n        {{ labelPrefix + \'.delete.cancel\' | translate }}\n    </button>\n</div>\n");
+$templateCache.put("uebb_hateoas_templates/hateoas-link.html","<div>\n    <div ng-show=\"promise.isFulfilled()\" class=\"transclude-content\"></div>\n\n    <div ng-if=\"!disableSpinner && (!promise || promise.isPending())\">\n        <span class=\"fa fa-spinner fa-spin\"></span> {{ labelPrefix + \'.loading\' }}\n    </div>\n\n    <div ng-if=\"promise.isRejected()\">\n        {{ labelPrefix + \'.error\' }}\n    </div>\n\n\n</div>");
+$templateCache.put("uebb_hateoas_templates/hateoas-list.html","<div ng-show=\"if !== false\" class=\"hateoas-list\">\n\n	<div ng-show=\"orderFields\" class=\"element-spacing-small\">\n		{{ \'general.list.order.label\' | translate }} &nbsp;&nbsp;&nbsp;\n		<div class=\"btn-group\">\n			<a href data-toggle=\"dropdown\" class=\"btn btn-link dropdown-toggle\">\n				<i class=\"fa fa-fw fa-sort\"></i>{{ labelPrefix + \'.field.\' + orderField | translate }} <span class=\"caret\"></span>\n			</a>\n			<ul class=\"dropdown-menu\" role=\"menu\">\n				<li ng-repeat=\"field in orderFields\" ng-class=\"{\'active\': orderField == field}\">\n					<a dropdown-toggle href ng-click=\"setOrder(field, orderDirection)\"><i class=\"fa fa-fw fa-sort\"></i>{{ labelPrefix + \'.field.\' + field | translate }} </a>\n				</li>\n			</ul>\n		</div>\n		<div class=\"btn-group\">\n			<a href data-toggle=\"dropdown\" class=\"btn btn-link dropdown-toggle\">\n				<i class=\"fa fa-fw\" ng-class=\"{\'fa-sort-amount-asc\': orderDirection == \'ASC\', \'fa-sort-amount-desc\': orderDirection == \'DESC\'}\"></i>{{ \'general.list.direction.\' + orderDirection | translate }} <span class=\"caret\"></span>\n			</a>\n			<ul class=\"dropdown-menu\" role=\"menu\">\n				<li ng-class=\"{\'active\': orderDirection == \'ASC\'}\">\n					<a dropdown-toggle href ng-click=\"setOrder(orderField, \'ASC\')\"><i class=\"fa fa-fw fa-sort-amount-asc\"></i>{{ \'general.list.order.direction.ASC\' | translate }}</a>\n				</li>\n				<li ng-class=\"{\'active\': orderDirection == \'DESC\'}\">\n					<a dropdown-toggle href ng-click=\"setOrder(orderField, \'DESC\')\"><i class=\"fa fa-fw fa-sort-amount-desc\"></i>{{ \'general.list.order.direction.DESC\' | translate }}</a>\n				</li>\n			</ul>\n		</div>\n	</div>\n\n	<div class=\"response element-spacing-small\" ng-show=\"!disableMessages\">\n\n		<div ng-show=\"!disableSpinner && (!promise || promise.isPending())\">\n			<span class=\"fa fa-spinner fa-spin\"></span> {{ labelPrefix + \'.loading\' | translate }}\n		</div>\n\n		<div ng-show=\"transcludeScope.error\">\n			{{ labelPrefix + \'.error\' | translate }}\n			{{transcludeScope.error}}\n		</div>\n\n		<div ng-show=\"promise.isResolved() && !transcludeScope.error && transcludeScope[as || rel].length === 0\">\n			{{ labelPrefix + \'.empty\' | translate }}\n		</div>\n\n	</div>\n\n	<div ng-show=\"promise.isResolved() && !transcludeScope.error\" class=\"hateoas-list-items transclude-content\"></div>\n\n	<div class=\"hateoas-pagination\">\n		<pagination\n				class=\"pagination-sm\"\n				ng-show=\"!disablePagination && pages > 1\"\n				total-items=\"pages * limit\"\n				items-per-page=\"limit\"\n				ng-model=\"page\"\n				previous-text=\"&lt;\"\n				next-text=\"&gt;\"\n				first-text=\"&lt;&lt;\"\n				last-text=\"&gt;&gt;\"\n				boundary-links=\"true\"\n				max-size=\"3\"\n				rotate=\"false\">\n		</pagination>\n	</div>\n\n</div>\n\n<div ng-show=\"bare\" class=\"transclude-bare\"></div>\n");
+$templateCache.put("uebb_hateoas_templates/hateoasSelectList.html","<div class=\"row\">\n	<div class=\"col-sm-12\">\n		<div class=\"hateoas-select-list-wrap\">\n			<div class=\"row hateoas-select-list\">\n				<div class=\"col-sm-5 selected-items-wrap\">\n					<div class=\"selected-items\">\n						<h2>{{ (labelPrefix + \'.selected.header\') | translate }}</h2>\n						<input type=\"text\" ng-model=\"searchSelected\" placeholder=\"{{ labelPrefix + \'.placeholder.search\' | translate }}\" class=\"form-control\" />\n						<hateoas-list resource=\"resource\"\n									  rel=\"{{ rel }}\"\n									  as=\"items\"\n									  update=\"updateSelected\"\n									  search=\"searchSelected\"\n									  label-prefix=\"{{ labelPrefix }}.selected\"\n									  order-field=\"{{ orderField }}\"\n									  order-direction=\"{{ orderField }}\">\n							<table class=\"table table-border table-hover table-condensed table-striped\">\n								<tr ng-if=\"items.length > 0\">\n									<th colspan=\"2\">{{ (labelPrefix + \'.selected.currently_assigned\') | translate }}</th>\n								</tr>\n								<tr ng-repeat=\"item in items\" ng-class=\"{ removed: inArray(item, removed) }\">\n									<td ng-bind=\"{{ itemLabel }}\"></td>\n									<td style=\"width: 50px;\" class=\"text-center\">\n										<a class=\"btn-pointer\"\n										   ng-click=\"remove(item)\"\n										   ng-hide=\"inArray(item, removed)\"\n										   tooltip=\"{{ \'general.item.remove\' | translate }}\"\n										   tooltip-append-to-body=\"true\"><span class=\"fa fa-trash-o\"></span></a>\n										<a class=\"btn-pointer\"\n										   ng-click=\"undoRemove(item)\"\n										   ng-show=\"inArray(item, removed)\"\n										   tooltip=\"{{ \'general.item.undoRemove\' | translate }}\"\n										   tooltip-append-to-body=\"true\"><span class=\"fa fa-undo\"></span></a>\n									</td>\n								</tr>\n\n								<tr ng-if=\"added.length > 0\">\n									<th colspan=\"2\">{{ (labelPrefix + \'.selected.recently_added\') | translate }}</th>\n								</tr>\n								<tr ng-repeat=\"item in added\">\n									<td ng-bind=\"{{ itemLabel }}\"></td>\n									<td style=\"width: 50px;\" class=\"text-center\">\n										<a class=\"btn-pointer\"\n										   ng-click=\"undoAdd(item)\"\n										   tooltip=\"{{ \'general.item.remove\' | translate }}\"\n										   tooltip-append-to-body=\"true\"><span class=\"fa fa-trash-o\"></span></a>\n									</td>\n								</tr>\n							</table>\n						</hateoas-list>\n					</div>\n				</div>\n\n				<div class=\"col-sm-2 chevron-wrap\">\n					<div class=\"chevron\">\n						<span class=\"fa fa-chevron-left fa-2x hidden-xs\"></span>\n						<span class=\"fa fa-chevron-up fa-2x visible-xs\"></span>\n					</div>\n				</div>\n\n				<div class=\"col-sm-5 available-items\">\n					<h2>{{ (labelPrefix + \'.available.header\') | translate }}</h2>\n					<input type=\"text\" ng-model=\"searchAvailable\" placeholder=\"{{ labelPrefix + \'.placeholder.search\' | translate }}\" class=\"form-control\" />\n					<hateoas-list resource=\"srcResource\"\n								  rel=\"{{ srcRel }}\"\n								  as=\"items\"\n								  update=\"updateAvailable\"\n								  search=\"searchAvailable\"\n								  filter=\"srcFilter\"\n								  if=\"resource\"\n								  label-prefix=\"{{ labelPrefix }}.available\"\n								  order-field=\"{{ orderField }}\"\n								  order-direction=\"{{ orderDirection }}\">\n\n						<table class=\"table table-border table-hover table-condensed table-striped\">\n							<tbody>\n								<tr ng-repeat=\"item in items\"\n									ng-hide=\"inArray(item, added)\"\n									ng-click=\"add(item)\"\n									style=\"cursor: pointer\"\n									tooltip=\"{{ \'general.item.add\' | translate }}\"\n									tooltip-append-to-body=\"true\">\n									<td style=\"width: 20px;\" class=\"text-center\">\n										<a class=\"btn-pointer\" ng-click=\"add(item)\"><span class=\"fa fa-plus\"></span></a>\n									</td>\n									<td ng-bind=\"{{ itemLabel }}\"></td>\n								</tr>\n							</tbody>\n						</table>\n					</hateoas-list>\n				</div>\n			</div>\n		</div>\n	</div>\n</div>");
+$templateCache.put("uebb_hateoas_templates/select-file.html","<div class=\"select-file\">\n\n        <hateoas-list disable-pagination=\"true\" disable-messages=\"true\" resource=\"linkResource\" limit=\"0\" rel=\"{{linkRel}}\" as=\"existingFiles\" update=\"data.updateExisting\">\n            <div ng-if=\"existingFiles.length > 0\" class=\"existing-files\">\n                <h5>{{ \'file.label.existingFiles\' | translate }}</h5>\n                <ul>\n                    <li ng-repeat=\"file in existingFiles\">\n\n                        {{ file.name }} ({{file.size | filesize}})\n                        <a class=\"btn-pointer\" delete-resource=\"file\" on-delete=\"data.updateExisting = true\" label=\"linkResource.name\">\n                            <i class=\"fa fa-trash-o\" tooltip=\"{{ \'file.label.delete\' | translate }}\"></i>\n                        </a>\n                    </li>\n                </ul>\n            </div>\n        </hateoas-list>\n\n        <div ng-if=\"files.length > 0\" class=\"new-files\">\n            <h5>{{ \'file.label.newFiles\' | translate }}</h5>\n\n            <ul>\n                <li ng-repeat=\"file in files\">\n\n                    <span ng-class=\"{\'text-danger\' : getFileErrors(file) !== null}\">\n                        {{ file[uploadProperty].name }} ({{ file[uploadProperty].size | filesize}})\n                    </span>\n\n            <span ng-if=\"file.$newVersion\">\n                        &nbsp; <span tooltip=\"{{ \'file.label.newVersion\' | translate }}\" tooltip-append-to-body=\"true\" class=\"btn-help\"><i class=\"fa fa-asterisk\"></i></span> &nbsp;\n                    </span>\n\n                    <a title=\"remove\" class=\"btn-pointer\" ng-click=\"files.splice(files.indexOf(file), 1)\">\n                        <i class=\"fa fa-times\" tooltip=\"{{ \'file.label.delete\' | translate }}\"></i>\n                    </a>\n\n                    <div class=\"help-block\" ng-if=\"getFileErrors(file) !== null\">\n                        <ul>\n                            <li ng-repeat=\"message in getFileErrors(file).uploadedFile.errors\" translate=\"{{ message }}\" ></li>\n                        </ul>\n                    </div>\n\n                </li>\n            </ul>\n\n        </div>\n\n        <span class=\"btn btn-default btn-file\">\n\n            {{ label | translate }} <input type=\"file\" accept=\"{{ mimeTypes }}\" />\n        </span>\n</div>");
+$templateCache.put("uebb_hateoas_templates/select-hateoas.html","<div class=\"chosen-container\"\n	 style=\"width:100%\"\n	 ng-class=\"{\'chosen-with-drop\': showDropdown, \'chosen-container-active\': active, \'chosen-container-single\': !multiple, \'chosen-container-multi\': !!multiple, \'chosen-disabled\':disabled}\">\n\n	<ul ng-show=\"multiple\" class=\"chosen-choices\">\n		<li ng-repeat=\"item in selected\" class=\"search-choice\">\n			<span ng-bind=\"{{label}}\"></span>\n			<a class=\"search-choice-close\" ng-click=\"remove(item)\"></a>\n		</li>\n		<li class=\"search-field\">\n			<input ng-show=\"active\"\n				   type=\"text\"\n				   ng-model=\"search\"\n				   class=\"default search\"\n				   autocomplete=\"off\"\n				   style=\"width: 125px;\"\n				   ng-change=\"page=1;showDropdown=true;query()\"\n				   ng-keydown=\"type($event)\" />\n			<input ng-hide=\"active || selected.length > 0\" type=\"text\" ng-disabled=\"disabled\" value=\"{{placeholder}}\" class=\"default\" />\n		</li>\n	</ul>\n\n\n	<a ng-show=\"!multiple\" class=\"chosen-single chosen-default\">\n		<span ng-if=\"selected.length == 0\">{{placeholder}}</span>\n		<span ng-if=\"selected.length\" ng-repeat=\"item in selected\" ng-bind=\"{{label}}\">\n		</span>\n\n		<i ng-if=\"selected.length\" ng-click=\"remove(selected[0])\" class=\"fa fa-times chosen-remove\" ng-hide=\"clearButton === false\"></i>\n\n		<div><b></b></div>\n	</a>\n\n	<div class=\"chosen-drop\">\n		<div ng-show=\"!multiple\" class=\"chosen-search\">\n			<input type=\"text\" class=\"default search\" autocomplete=\"off\" ng-model=\"search\" ng-change=\"page=1;query()\">\n		</div>\n		<div ng-if=\"!request || request.isPending()\" class=\"chosen-spinner\" style=\"padding:20px;text-align:center\">\n			<span class=\"fa fa-spinner fa-spin\"></span>\n		</div>\n		<div ng-if=\"request.isFulfilled()\">\n			<div ng-show=\"request.value().items.length == 0\" style=\"padding:20px;text-align:center\">\n				{{ \'general.list.empty\' | translate }}\n				<div ng-show=\"!!created && !!createFactory && search != \'\'\"><a ng-click=\"create()\">\"{{search}}\" {{ \'general.add\' | translate }}</a></div>\n			</div>\n			<ul class=\"chosen-results\">\n				<li ng-repeat=\"item in request.value().items\" ng-class=\"{\'active-result\': isNotSelected(item), \'result-selected\': !isNotSelected(item), \'highlighted\': item.selected}\" ng-bind=\"{{label}}\" ng-click=\"add(item)\"></li>\n				<li ng-show=\"displayCreate && request.value().items.length != 0\" class=\"active-result\">\n					<a ng-click=\"create()\">\"{{search}}\" {{ \'general.add\' | translate }}</a>\n				</li>\n			</ul>\n\n			<div class=\"select-pagination\" ng-show=\"request.value().pages > 1\">\n				<div class=\"pages\">\n					{{ \'general.page\' | translate }} <span>{{ page }}</span> {{ \'general.of\' | translate }} <span>{{ request.value().pages }}</span>\n				</div>\n				<div class=\"pagination\"> \n					<ul class=\"pagination\">\n						<li ng-class=\"{disabled: page <= 1}\" class=\"hateoas-select-prev\">\n							<a ng-click=\"changePage(page - 1);\">\n								&laquo;\n							</a>\n						</li>\n						<li ng-class=\"{disabled: page >= request.value().pages}\" class=\"hateoas-select-next\">\n							<a ng-click=\"changePage(page + 1);\">\n								&raquo;\n							</a>\n						</li>\n					</ul>\n				</div>\n			</div>\n\n		</div>\n		<div ng-if=\"request.isRejected()\" style=\"padding:20px;text-align:center\">\n			{{ \'general.list.error\' | translate }}\n		</div>\n\n	</div>\n</div>\n");}]);
 //# sourceMappingURL=_bower.js.map

@@ -113,3 +113,8 @@ doctrine_cache:
         uebb_hateoas_query_cache:
             type: array
             namespace: uebb_hateoas_query_cache_ns
+
+jms_serializer:
+    visitors:
+        json:
+            options: 128

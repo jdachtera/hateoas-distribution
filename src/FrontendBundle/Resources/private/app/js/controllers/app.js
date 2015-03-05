@@ -4,13 +4,17 @@
 ==================================================================*/
 /*global app*/
 
-app.controller('AppCtrl', function ($rootScope, HateoasResource, $timeout, apiRoot, HateoasCollection) {
+app.controller('AppCtrl', function ($rootScope, HateoasResource, hateoasCache, apiRoot, Promise, preCachedResources) {
 
 	'use strict';
 
-    HateoasResource.setContentType('application/vnd.uebb.hateoas.collection+json', HateoasCollection);
-
-    HateoasResource.get(apiRoot)
+    Promise
+        .all(preCachedResources.map(function(resource) {
+            return hateoasCache.addToCache(resource, function() {});
+        }))
+        .then(function() {
+            return HateoasResource.get(apiRoot);
+        })
         .then(function (root) {
             $rootScope.root = root;
             return root.getLink('currentUser');
@@ -18,6 +22,8 @@ app.controller('AppCtrl', function ($rootScope, HateoasResource, $timeout, apiRo
         .then(function (currentUser) {
             $rootScope.currentUser = currentUser;
         });
+
+
 
 	console.log('Controller ===  AppCtrl');
 });

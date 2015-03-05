@@ -142,7 +142,8 @@ gulp.task('concat:js', ['js:hint'], function () {
 
 	console.log('-------------------------------------------------- CONCAT :js');
 	return gulp.src([SETTINGS.src.js + 'plugins/*.js', SETTINGS.src.js + 'app.js', SETTINGS.src.js + '*.js', SETTINGS.src.js + '**/*.js'], {base: '.'})
-        .pipe(gulpPlugins.sourcemaps.init())
+        .pipe(gulpPlugins.sourcemaps.init({loadMaps: true}))
+        //.pipe(gulpPlugins.babel())
 	    .pipe(gulpPlugins.concat('all.js'))
         .pipe(gulpPlugins.sourcemaps.write('.'))
         .pipe(gulp.dest(SETTINGS.build.js))
@@ -150,7 +151,7 @@ gulp.task('concat:js', ['js:hint'], function () {
         .pipe(gulpPlugins.ngAnnotate())
 	    .pipe(gulpPlugins.uglify())
         .pipe(gulpPlugins.concat('all.min.js'))
-        .pipe(gulp.dest(SETTINGS.build.js))
+        .pipe(gulp.dest(SETTINGS.build.js));
 
 });
 
@@ -251,7 +252,7 @@ gulp.task('watch_files', function () {
 
 	watchedFiles.push(gulp.watch([SETTINGS.src.css + '*.scss', SETTINGS.src.css + '**/*.scss'], ['concat:css']));
 
-    watchedFiles.push(gulp.watch([SETTINGS.src.js + '*.js',    SETTINGS.src.js + '**/*.js'],    ['concat:js']));
+    watchedFiles.push(gulp.watch([SETTINGS.src.js + '*.js',    SETTINGS.src.js + '**/*.js', SETTINGS.src.js + '*.es6',    SETTINGS.src.js + '**/*.es6'],    ['concat:js']));
 
 	watchedFiles.push(gulp.watch([SETTINGS.src.images + '*.*', SETTINGS.src.images + '**/*.*'], ['copy:images']));
 

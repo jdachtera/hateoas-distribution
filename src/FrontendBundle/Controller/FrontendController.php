@@ -5,15 +5,23 @@ namespace FrontendBundle\Controller;
 use Doctrine\Common\Util\Debug;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use uebb\HateoasBundle\Entity\Root;
+use uebb\HateoasBundle\Entity\User;
 
 class FrontendController extends \Symfony\Bundle\FrameworkBundle\Controller\Controller
 {
-    public function indexAction(Request $request)
+    public function indexAction(Request $request, $path)
     {
-        return $this->render(
-            'FrontendBundle:Frontend:index.html.twig',
-            $this->getViewData()
-        );
+        $root = new Root('/api/v1');
+
+        $preCachedResources = array($root);
+
+        if ($this->getUser() instanceof User) {
+            $preCachedResources[] = $this->getUser();
+        }
+        // TODO: Add more pre cached resources here depending on the current path
+
+        return $this->render('FrontendBundle:Frontend:index.html.twig', $viewData = $this->getViewData($preCachedResources));
     }
 
     public function loginAction()
@@ -46,12 +54,18 @@ class FrontendController extends \Symfony\Bundle\FrameworkBundle\Controller\Cont
 
     }
 
-    protected function getViewData()
+    protected function getViewData($preCachedResources = array())
     {
+        $serializedPreCachedResources = array();
+        foreach($preCachedResources as $resource) {
+            $serializedPreCachedResources[] = $this->get('jms_serializer')->serialize($resource, 'json');
+        }
+
         return array(
-            'apiRooturl' => $this->generateUrl('root', array(), UrlGeneratorInterface::ABSOLUTE_URL),
+            'apiRooturl' => $this->generateUrl('root', array()),
             'baseUrl' => $this->container->get('router')->getContext()->getBaseUrl(),
-            'environment' => $this->container->getParameter('kernel.environment')
+            'environment' => $this->container->getParameter('kernel.environment'),
+            'preCachedResources' => '[' . implode(',', $serializedPreCachedResources) . ']'
         );
     }
 

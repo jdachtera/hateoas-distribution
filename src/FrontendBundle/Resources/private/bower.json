@@ -12,7 +12,6 @@
     "URIjs": "~1.14.1",
     "uebb-angular-hateoas": "~0.0.1",
     "angular-translate": "~2.6.0",
-    "angular-bluebird-promises": "~0.2.0",
     "bootstrap-sass-official": "~3.3.3"
   },
   "devDependencies": {
@@ -41,7 +40,8 @@
     },
     "URIjs": {
       "main": [
-        "src/URI.js"
+        "src/URI.js",
+        "src/URITemplate.js"
       ]
     }
   }

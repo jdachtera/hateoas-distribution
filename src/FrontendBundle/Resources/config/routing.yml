@@ -9,8 +9,8 @@ login_check:
         _controller: FrontendBundle:Frontend:loginCheck
 
 catch_all:
-    path:     /{catchall}
+    path:     /{path}
     defaults:
         _controller: FrontendBundle:Frontend:index
     requirements:
-        catchall: "(?!js|css|bundles|_profiler).*"
+        path: "(?!js|css|bundles|_profiler).*"

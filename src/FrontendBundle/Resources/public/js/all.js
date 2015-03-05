@@ -62,13 +62,17 @@ app.run(function ($rootScope) {
 ==================================================================*/
 /*global app*/
 
-app.controller('AppCtrl', function ($rootScope, HateoasResource, $timeout, apiRoot, HateoasCollection) {
+app.controller('AppCtrl', function ($rootScope, HateoasResource, hateoasCache, apiRoot, Promise, preCachedResources) {
 
 	'use strict';
 
-    HateoasResource.setContentType('application/vnd.uebb.hateoas.collection+json', HateoasCollection);
-
-    HateoasResource.get(apiRoot)
+    Promise
+        .all(preCachedResources.map(function(resource) {
+            return hateoasCache.addToCache(resource, function() {});
+        }))
+        .then(function() {
+            return HateoasResource.get(apiRoot);
+        })
         .then(function (root) {
             $rootScope.root = root;
             return root.getLink('currentUser');
@@ -76,6 +80,8 @@ app.controller('AppCtrl', function ($rootScope, HateoasResource, $timeout, apiRo
         .then(function (currentUser) {
             $rootScope.currentUser = currentUser;
         });
+
+
 
 	console.log('Controller ===  AppCtrl');
 });
@@ -95,6 +101,9 @@ app.controller('AppCtrl', function ($rootScope, HateoasResource, $timeout, apiRo
 app.controller('ListGalleriesCtrl', function ($scope) {
 
 	'use strict';
+
+    var viewModel = $scope.listGalleries = {};
+
 
 	console.log('Controller ===  ListGalleriesCtrl');
 });
@@ -160,20 +169,21 @@ app.controller('NewGalleryCtrl', function ($scope, $location, HateoasResource) {
 ==================================================================*/
 /*global app*/
 
-app.controller('NewImageCtrl', function ($scope, HateoasResource, $location, $routeParams) {
+app.controller('NewImageCtrl', function ($scope, $location, $routeParams, HateoasResource, Promise) {
 
 	'use strict';
 
-    $scope.image = new HateoasResource();
-    $scope.image.setLink('user', $scope.currentUser);
+    var viewModel = $scope.newImage = {};
+    viewModel.id = $routeParams.id;
+    viewModel.files = [];
 
-    $scope.id = $routeParams.id;
+    viewModel.submit = function () {
+        Promise.all(viewModel.files.map(function(image) {
+            return image.save($scope.root.getHref('images'));
+        })).then(function () {
+            $location.path('/galleries/' + $routeParams.id);
+        });
 
-    $scope.submit = function () {
-        $scope.request = $scope.image.save($scope.root.getHref('images'))
-            .then(function () {
-                $location.path('/galleries/' + $routeParams.id);
-            });
     };
 
 
@@ -211,23 +221,17 @@ app.controller('NewUserCtrl', ['$scope', function ($scope) {
 ==================================================================*/
 /*global app*/
 
-app.controller('ShowGalleryCtrl', function ($scope, $routeParams) {
 
-	'use strict';
 
-    $scope.id = $routeParams.id;
 
-    /**
-     *
-     * @param {HateoasResource} image
-     */
-    $scope.remove = function(image) {
-        image.delete().then(function() {
-            $scope.update = true;
-        });
-    };
+app.controller('ShowGalleryCtrl', function($scope, $modal, $routeParams) {
+    'use strict';
 
-	console.log('Controller ===  ShowGalleryCtrl');
+    var viewModel = $scope.showGallery = {};
+
+    viewModel.id = $routeParams.id;
+
+    console.log('Controller ===  ShowGalleryCtrl');
 });
 
 

@@ -4,20 +4,21 @@
 ==================================================================*/
 /*global app*/
 
-app.controller('NewImageCtrl', function ($scope, HateoasResource, $location, $routeParams) {
+app.controller('NewImageCtrl', function ($scope, $location, $routeParams, HateoasResource, Promise) {
 
 	'use strict';
 
-    $scope.image = new HateoasResource();
-    $scope.image.setLink('user', $scope.currentUser);
+    var viewModel = $scope.newImage = {};
+    viewModel.id = $routeParams.id;
+    viewModel.files = [];
 
-    $scope.id = $routeParams.id;
+    viewModel.submit = function () {
+        Promise.all(viewModel.files.map(function(image) {
+            return image.save($scope.root.getHref('images'));
+        })).then(function () {
+            $location.path('/galleries/' + $routeParams.id);
+        });
 
-    $scope.submit = function () {
-        $scope.request = $scope.image.save($scope.root.getHref('images'))
-            .then(function () {
-                $location.path('/galleries/' + $routeParams.id);
-            });
     };
 
 

@@ -4,23 +4,17 @@
 ==================================================================*/
 /*global app*/
 
-app.controller('ShowGalleryCtrl', function ($scope, $routeParams) {
 
-	'use strict';
 
-    $scope.id = $routeParams.id;
 
-    /**
-     *
-     * @param {HateoasResource} image
-     */
-    $scope.remove = function(image) {
-        image.delete().then(function() {
-            $scope.update = true;
-        });
-    };
+app.controller('ShowGalleryCtrl', function($scope, $modal, $routeParams) {
+    'use strict';
 
-	console.log('Controller ===  ShowGalleryCtrl');
+    var viewModel = $scope.showGallery = {};
+
+    viewModel.id = $routeParams.id;
+
+    console.log('Controller ===  ShowGalleryCtrl');
 });
 
 

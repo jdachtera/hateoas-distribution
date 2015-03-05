@@ -2,14 +2,13 @@
 
     <div class="col-md-12">
 
-        <hateoas-link resource="root" rel="galleries/{{id}}" as="gallery">
+        <hateoas-link resource="root" rel="galleries/{{newImage.id}}" as="gallery">
             <form>
-                <input ng-model="image.description" />
-                <select-file link-resource="gallery" link-rel="gallery" resource="image"></select-file>
+                <select-file link-resource="gallery" link-rel="gallery" multiple="true" files="newImage.files"></select-file>
             </form>
         </hateoas-link>
 
-        <a class="btn" ng-click="submit()">Save</a>
+        <a class="btn" ng-click="newImage.submit()">Save</a>
     </div>
 
 </section>
