@@ -102,17 +102,14 @@ fos_rest:
         xml: true
     format_listener:
         rules:
-            - { path: '^/api', priorities: ['json', 'xml'], fallback_format: json, prefer_extension: false }
+            - { path: '^/api', priorities: ['json'], fallback_format: 'json', prefer_extension: true }
             - { path: '^/', priorities: [ 'text/html', 'text/css', 'application-x/javascript', 'application/javascript', 'text/javascript', '*/*'],  prefer_extension: false }
 
 doctrine_cache:
     providers:
-        uebb_hateoas_relation_cache:
+        uebb_hateoas:
             type: array
-            namespace: uebb_hateoas_relation_cache_ns
-        uebb_hateoas_query_cache:
-            type: array
-            namespace: uebb_hateoas_query_cache_ns
+            namespace: uebb_hateoas_ns
 
 jms_serializer:
     visitors:

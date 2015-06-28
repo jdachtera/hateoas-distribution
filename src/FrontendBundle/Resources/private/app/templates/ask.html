@@ -1,0 +1,19 @@
+<div class="modal-header">
+    <h3 class="modal-title">{{ askTitle }}</h3>
+</div>
+
+<div class="modal-body">
+
+    <p>{{ askQuestion}}</p>
+
+</div>
+<div class="modal-footer">
+
+    <button class="btn btn-primary" ng-click="onYes();modal.close();">
+        {{ answerYes || 'Yes' }}
+    </button>
+
+    <button class="btn btn-cancel" ng-click="onNo();modal.close();">
+        {{ answerNo || 'No' }}
+    </button>
+</div>

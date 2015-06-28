@@ -2,7 +2,7 @@
   "name": "private",
   "version": "0.0.0",
   "dependencies": {
-    "angular": "*",
+    "angular": "1.3.x",
     "angular-cookies": "*",
     "angular-sanitize": "*",
     "angular-route": "*",
@@ -12,7 +12,9 @@
     "URIjs": "~1.14.1",
     "uebb-angular-hateoas": "~0.0.1",
     "angular-translate": "~2.6.0",
-    "bootstrap-sass-official": "~3.3.3"
+    "bootstrap-sass-official": "~3.3.3",
+    "angulargrid": "https://github.com/s-yadav/angulargrid.git",
+    "angular-bootstrap-lightbox": "~0.5.0"
   },
   "devDependencies": {
     "angular-mocks": "*",
@@ -43,6 +45,17 @@
         "src/URI.js",
         "src/URITemplate.js"
       ]
+    },
+    "angulargrid": {
+      "main": [
+        "angulargrid.min.js"
+      ],
+      "dependencies": {
+        "angular": "*"
+      }
     }
+  },
+  "resolutions": {
+    "angular": ">=1.3.0 <=1.4"
   }
 }

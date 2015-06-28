@@ -1,0 +1,38 @@
+<section class="edit_user" ng-controller="EditUserCtrl">
+    <h1>Edit a User</h1>
+
+    <hateoas-link resource="root" rel="user" params="{id: editUser.id}">
+
+        <form class="form form-horizontal">
+
+            <div class="form-group" ng-class="{'has-error': editUser.errors.username}">
+                <label>Username</label>
+                <input class="form-control" ng-model="user.username" />
+                <label ng-repeat="error in editUser.errors.username">{{ error.message }}</label>
+            </div>
+            <div class="form-group" ng-class="{'has-error': editUser.errors.roles}">
+                <label>Role</label>
+
+                <select ng-model="user.roles[0]" class="form-control">
+                    <option value="ROLE_ADMIN">Admin</option>
+                    <option value="ROLE_USER">User</option>
+                </select>
+                <label ng-repeat="error in editUser.errors.roles">{{ error.message }}</label>
+            </div>
+            <div class="form-group" ng-class="{'has-error': user.errors.clearPassword || editUser.errors.password }">
+                <label>Password</label>
+                <input class="form-control" type=password" ng-model="user.plainPassword" />
+                <label ng-repeat="error in editUser.errors.plainPassword">{{ error.message }}</label>
+                <label ng-repeat="error in editUser.errors.password">{{ error.message }}</label>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="form-control" ng-click="editUser.save(user)">
+                    Save
+                </button>
+            </div>
+        </form>
+
+    </hateoas-link>
+
+
+</section>

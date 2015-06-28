@@ -1,17 +1,19 @@
 root:
-    path: /
-    defaults:
-        _controller: HateoasBundle:Root:getRoot
-    methods: GET
+    type: rest
+    resource: BackendBundle\Controller\RootController
+    name_prefix: backendbundle_api_v1_
 
 user:
     type: hateoas
     resource: BackendBundle\Controller\UserController
+    name_prefix: backendbundle_api_v1_
 
 image:
     type: hateoas
     resource: BackendBundle\Controller\ImageController
+    name_prefix: backendbundle_api_v1_
 
 gallery:
     type: hateoas
     resource: BackendBundle\Controller\GalleryController
+    name_prefix: backendbundle_api_v1_

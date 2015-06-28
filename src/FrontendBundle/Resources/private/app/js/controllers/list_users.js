@@ -8,6 +8,8 @@ app.controller('ListUsersCtrl', ['$scope', function ($scope) {
 
 	'use strict';
 
+    var viewModel = $scope.listUsers = {};
+
 	console.log('Controller ===  ListUsersCtrl');
 }]);
 

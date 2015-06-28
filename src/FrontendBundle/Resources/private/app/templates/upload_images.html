@@ -1,0 +1,21 @@
+<section class="new_image" ng-controller="UploadImagesCtrl">
+    <hateoas-link resource="root" rel="gallery" params="{id: newImage.id}" as="gallery">
+
+        <div class="modal-header">
+            <h3 class="modal-title">Upload images</h3>
+        </div>
+        <div class="modal-body">
+            <form class="form">
+                <select-file link-resource="gallery" link-rel="gallery" resource="newImage.createImage(gallery)" multiple="true" files="newImage.files"></select-file>
+            </form>
+
+        </div>
+        <div class="modal-footer">
+            <a class="btn btn-primary" ng-click="newImage.submit(gallery)">Save</a>
+
+            <button class="btn btn-warning" ng-click="$dismiss()">Cancel</button>
+        </div>
+
+    </hateoas-link>
+
+</section>

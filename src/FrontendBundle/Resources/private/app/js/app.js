@@ -5,29 +5,35 @@
 /*global angular*/
 console.log('Creating app');
 
-var app = angular.module('app', ['ngCookies', 'ngSanitize', 'ngRoute', 'ngAnimate', 'ui.bootstrap', 'uebb.hateoas']);
+var app = angular.module('app', ['ngCookies', 'ngSanitize', 'ngRoute', 'ngAnimate', 'ui.bootstrap', 'uebb.hateoas', 'angularGrid', 'bootstrapLightbox']);
 
 
-app.config(function ($routeProvider, $locationProvider, $httpProvider) {
+app.config(function ($routeProvider, $locationProvider, $httpProvider, LightboxProvider) {
 	'use strict';
 
     $routeProvider
         .when('/galleries', {
-            templateUrl: 'bundles/frontend/templates/list_galleries.html',
-            controller: 'ListGalleriesCtrl'
+            templateUrl: 'bundles/frontend/templates/list_galleries.html'
         })
         .when('/galleries/new', {
-            templateUrl: 'bundles/frontend/templates/new_gallery.html',
-            controller: 'NewGalleryCtrl'
+            templateUrl: 'bundles/frontend/templates/new_gallery.html'
         })
         .when('/galleries/:id', {
-            templateUrl: 'bundles/frontend/templates/show_gallery.html',
-            controller: 'ShowGalleryCtrl'
+            templateUrl: 'bundles/frontend/templates/show_gallery.html'
         })
-        .when('/galleries/:id/new', {
-            templateUrl: 'bundles/frontend/templates/new_image.html',
-            controller: 'NewImageCtrl'
+        .when('/users', {
+            templateUrl: 'bundles/frontend/templates/list_users.html'
         })
+        .when('/users/new', {
+            templateUrl: 'bundles/frontend/templates/new_user.html'
+        })
+        .when('/users/:id', {
+            templateUrl: 'bundles/frontend/templates/show_user.html'
+        })
+        .when('/users/:id/edit', {
+            templateUrl: 'bundles/frontend/templates/edit_user.html'
+        })
+
         .otherwise({
             redirectTo: '/galleries'
         });
@@ -36,6 +42,16 @@ app.config(function ($routeProvider, $locationProvider, $httpProvider) {
 
 	// This is required for Browser Sync to work poperly
 	$httpProvider.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+
+
+    LightboxProvider.getImageUrl = function(image) {
+        return image.getHref('download', {width: 1280, height: 1280});
+    };
+
+    LightboxProvider.getImageCaption = function(image) {
+        return image.description;
+    };
+
 });
 
 

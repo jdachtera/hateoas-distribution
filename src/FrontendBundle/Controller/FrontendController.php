@@ -5,19 +5,23 @@ namespace FrontendBundle\Controller;
 use Doctrine\Common\Util\Debug;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Validator\Constraint;
 use uebb\HateoasBundle\Entity\Root;
 use uebb\HateoasBundle\Entity\User;
 
 class FrontendController extends \Symfony\Bundle\FrameworkBundle\Controller\Controller
 {
+    protected $rootRoute = 'backendbundle_api_v1_get_root';
+
     public function indexAction(Request $request, $path)
     {
-        $root = new Root('/api/v1');
+        $root = $this->get('uebb.hateoas.link_resolver')->resolveLink($this->generateUrl($this->rootRoute));
 
         $preCachedResources = array($root);
 
         if ($this->getUser() instanceof User) {
             $preCachedResources[] = $this->getUser();
+            $root->setCurrentUser($this->getUser());
         }
         // TODO: Add more pre cached resources here depending on the current path
 
@@ -46,7 +50,6 @@ class FrontendController extends \Symfony\Bundle\FrameworkBundle\Controller\Cont
                 )
             )
         );
-
     }
 
     public function loginCheckAction()
@@ -56,18 +59,12 @@ class FrontendController extends \Symfony\Bundle\FrameworkBundle\Controller\Cont
 
     protected function getViewData($preCachedResources = array())
     {
-        $serializedPreCachedResources = array();
-        foreach($preCachedResources as $resource) {
-            $serializedPreCachedResources[] = $this->get('jms_serializer')->serialize($resource, 'json');
-        }
-
         return array(
-            'apiRooturl' => $this->generateUrl('root', array()),
+            'apiRooturl' => $this->generateUrl($this->rootRoute, array()),
             'baseUrl' => $this->container->get('router')->getContext()->getBaseUrl(),
             'environment' => $this->container->getParameter('kernel.environment'),
-            'preCachedResources' => '[' . implode(',', $serializedPreCachedResources) . ']'
+            'preCachedResources' =>  $this->get('jms_serializer')->serialize($preCachedResources, 'json')
         );
     }
-
 
 }

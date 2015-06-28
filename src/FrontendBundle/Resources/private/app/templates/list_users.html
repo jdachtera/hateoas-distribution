@@ -1,3 +1,20 @@
 <section class="list_users" ng-controller="ListUsersCtrl">
-	
+    <hateoas-list resource="root" rel="users" update="listUsers.update">
+        <table class="table">
+            <tr ng-repeat="user in users">
+                <td>
+                    <a ng-href="users/{{ user.id }}">
+                        {{ user.username }}
+                    </a>
+                </td>
+                <td>
+                    <a ng-href="users/{{ user.id }}/edit"><span class="glyphicon-edit glyphicon"></span></a>
+                    <a class="btn" delete-resource="user" on-delete="listUsers.update=true"><span class="glyphicon-remove glyphicon"></span></a>
+                </td>
+
+            </tr>
+        </table>
+    </hateoas-list>
+
+    <a ng-href="users/new"><span class="glyphicon glyphicon-plus"></span></a>
 </section>

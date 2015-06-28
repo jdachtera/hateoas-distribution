@@ -5,16 +5,44 @@
             <h1>{{ gallery.name }}</h1>
             <p>{{ gallery.description }}</p>
 
-            <hateoas-list resource="gallery" rel="images" update="showGallery.update">
-                <div class="row">
-                    <div class="col-md-2" ng-repeat="image in images">
-                        <img ng-src="{{ image.getHref('download', { width: 200, height: 150 }) }}" />
-                        <a class="btn" delete-resource="image" on-delete="showGallery.update=true">Remove</a>
-                    </div>
-                </div>
-            </hateoas-list>
+            <hateoas-list resource="gallery" rel="images" update="showGallery.update" limit="0" resource-as="collection">
 
-            <a href="galleries/{{gallery.id}}/new">Add an image</a>
+                <ul class="dynamic-grid" angular-grid="images" grid-width="300" gutter-size="10" angular-grid-id="gallery">
+
+´                   <li ng-repeat="image in images" class="grid">
+                        <div class="grid-item-inner" >
+                            <img ng-src="{{ image.getHref('download', { width: 300}) }}"  class="grid-img" ng-click="showGallery.openLightboxModal(images, $index)"/>
+
+                            <div class="grid-item-overlay">
+                                <div class="description">
+                                    {{ image.description }}
+                                </div>
+
+                                <div class="grid-item-controls">
+                                    <a class="btn" ng-click="showGallery.openLightboxModal(images, $index)" >
+                                        <span class="glyphicon glyphicon-fullscreen"></span>
+                                    </a>
+                                    <a class="btn" delete-resource="image" on-delete="showGallery.update=true" ng-if="currentUser.getHref('self') === gallery.getHref('user')">
+                                        <span class="glyphicon glyphicon-remove"></span>
+                                    </a>
+                                    <a class="btn" ng-click="showGallery.openEditModal(image)" ng-if="currentUser.getHref('self') === gallery.getHref('user')">
+                                        <span class="glyphicon glyphicon-edit"></span>
+                                    </a>
+                                </div>
+                            </div>
+
+                        </div>
+                    </li>
+                </ul>
+
+                <a ask-title="I have a question" ask-question="Really delete all images?" on-yes="showGallery.removeAll(collection)">
+                    <span class="glyphicon glyphicon-remove"></span>
+                </a>
+
+            </hateoas-list>
+            <a class="btn" ng-click="showGallery.openUploadModal()"><span class="glyphicon glyphicon-plus"></span></a>
+
+
         </hateoas-link>
     </div>
 </section>

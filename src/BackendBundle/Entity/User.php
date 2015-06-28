@@ -19,7 +19,7 @@ use Hateoas\Configuration\Annotation as Hateoas;
 use Symfony\Component\Validator\Constraints as Assert;
 
 use uebb\HateoasBundle\Annotation as UebbHateoas;
-
+use Knp\JsonSchemaBundle\Annotations as Json;
 
 /**
  * Class User
@@ -27,6 +27,7 @@ use uebb\HateoasBundle\Annotation as UebbHateoas;
  * @ORM\Entity
  * @Hateoas\RelationProvider("uebb.hateoas.relation_provider:addRelations")
  * @Serializer\ExclusionPolicy("all")
+ * @Json\Schema("user")
  */
 class User extends \uebb\HateoasBundle\Entity\User
 {

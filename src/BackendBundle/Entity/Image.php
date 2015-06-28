@@ -7,13 +7,14 @@ use JMS\Serializer\Annotation as Serializer;
 use uebb\HateoasBundle\Annotation as UebbHateoas;
 use uebb\HateoasBundle\Entity\File;
 use uebb\HateoasBundle\Entity\ImageInterface;
-
+use Knp\JsonSchemaBundle\Annotations as Json;
 /**
  * Class Image
  *
  * @ORM\Entity
  * @Hateoas\RelationProvider("uebb.hateoas.relation_provider:addRelations")
  * @Serializer\ExclusionPolicy("all")
+ * @Json\Schema("image")
  */
 class Image extends File implements ImageInterface
 {
@@ -22,7 +23,7 @@ class Image extends File implements ImageInterface
      *
      * @ORM\Column(type="string")
      * @Serializer\Expose
-     *
+     * @UebbHateoas\QueryAble()
      * @UebbHateoas\FormField
      */
     protected $description = '';

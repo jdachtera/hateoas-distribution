@@ -85,10 +85,10 @@ gulp.task('concat:bower', function () {
 
 	var jsFilter = gulpPlugins.filter('**/*.js'),
 		cssFilter = gulpPlugins.filter('**/*.css'),
-		assetsFilter = gulpPlugins.filter(['!**/*.js', '!**/*.css', '!**/*.scss']);
+		assetsFilter = gulpPlugins.filter(['**/*', '!**/*.js', '!**/*.css', '!**/*.scss']);
 
 
-	return gulp.src(bowerFiles(bowerConfig), {base: '.'})
+	return gulp.src(bowerFiles(bowerConfig), {base: SETTINGS.src.bower})
 		.pipe(jsFilter)
         .pipe(gulpPlugins.if(args.debug, gulpPlugins.filelog('bower js')))
         .pipe(gulpPlugins.sourcemaps.init({loadMaps: true}))
@@ -133,7 +133,7 @@ gulp.task('concat:bower', function () {
         .pipe(gulp.dest(SETTINGS.build.css))
 		.pipe(cssFilter.restore())
 		.pipe(assetsFilter)
-        .pipe(gulpPlugins.if(args.debug, gulpPlugins.filelog()))
+        .pipe(gulpPlugins.if(args.debug, gulpPlugins.filelog('bower assets')))
 		.pipe(gulp.dest(SETTINGS.build.bower))
 		.pipe(assetsFilter.restore());
 });

@@ -20,6 +20,7 @@ class AppKernel extends Kernel
             new FOS\RestBundle\FOSRestBundle(),
             new JMS\SerializerBundle\JMSSerializerBundle(),
             new Bazinga\Bundle\HateoasBundle\BazingaHateoasBundle(),
+            new \Knp\JsonSchemaBundle\KnpJsonSchemaBundle(),
             new uebb\HateoasBundle\HateoasBundle(),
             new BackendBundle\BackendBundle(),
             new FrontendBundle\FrontendBundle(),

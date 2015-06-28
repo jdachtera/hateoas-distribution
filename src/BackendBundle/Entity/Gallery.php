@@ -14,7 +14,7 @@ use Hateoas\Configuration\Annotation as Hateoas;
 use JMS\Serializer\Annotation as Serializer;
 use uebb\HateoasBundle\Annotation as UebbHateoas;
 use uebb\HateoasBundle\Entity\Resource;
-
+use Knp\JsonSchemaBundle\Annotations as Json;
 
 /**
  * Class Gallery
@@ -22,6 +22,8 @@ use uebb\HateoasBundle\Entity\Resource;
  * @ORM\Entity
  * @Hateoas\RelationProvider("uebb.hateoas.relation_provider:addRelations")
  * @Serializer\ExclusionPolicy("all")
+ * @Json\Schema("gallery")
+ *
  */
 class Gallery extends Resource
 {
@@ -56,6 +58,7 @@ class Gallery extends Resource
      * @var ArrayCollection<Image>
      *
      * @ORM\OneToMany(targetEntity="Image", mappedBy="gallery")
+     * @UebbHateoas\QueryAble()
      */
     protected $images;
 

@@ -1,4 +1,7 @@
 security:
+    #acl:
+    #    connection: default
+
     encoders:
         BackendBundle\Entity\User: bcrypt
         Symfony\Component\Security\Core\User\User: plaintext
@@ -25,6 +28,8 @@ security:
                 property: username
 
     firewalls:
+
+
         main:
             pattern: ^/
 
@@ -46,6 +51,6 @@ security:
     access_control:
         - { path: ^/login, roles: IS_AUTHENTICATED_ANONYMOUSLY }
         - { path: ^/_wdt, roles: IS_AUTHENTICATED_ANONYMOUSLY }
-        - { path: ^/, roles: ROLE_USER }
+        - { path: ^/, roles: [IS_AUTHENTICATED_REMEMBERED, IS_AUTHENTICATED_FULLY] }
 
 

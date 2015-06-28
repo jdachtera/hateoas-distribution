@@ -71,7 +71,7 @@ class ImageVoter extends ResourceVoter
      * @return int
      */
     protected function patch(TokenInterface $token, PatchActionEventData $data) {
-        return $data->getResource()->getCreatedBy() === $token->getUser();
+        return $data->getResource()->getGallery()->getUser() === $token->getUser();
     }
 
     /**
@@ -80,7 +80,7 @@ class ImageVoter extends ResourceVoter
      * @return int
      */
     protected function patchProperty(TokenInterface $token, PatchPropertyActionEventData $data) {
-        return $data->getResource()->getCreatedBy() === $token->getUser();
+        return $data->getResource()->getGallery()->getUser() === $token->getUser();
     }
 
     /**
@@ -89,7 +89,7 @@ class ImageVoter extends ResourceVoter
      * @return int
      */
     protected function remove(TokenInterface $token, RemoveActionEventData $data) {
-        return $data->getResource()->getCreatedBy() === $token->getUser() || $this->hasRole('ROLE_ADMIN', $token);
+        return $data->getResource()->getGallery()->getUser() === $token->getUser() || $this->hasRole('ROLE_ADMIN', $token);
     }
 
     /**
@@ -108,7 +108,7 @@ class ImageVoter extends ResourceVoter
      * @return int
      */
     protected function removeLink(TokenInterface $token, RemoveLinkActionEventData $data) {
-        return $data->getResource()->getCreatedBy() === $token->getUser();
+        return $data->getResource()->getGallery()->getUser() === $token->getUser();
     }
 
     
